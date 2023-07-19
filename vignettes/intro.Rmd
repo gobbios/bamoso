@@ -1,0 +1,664 @@
+---
+title: "intro to \\texttt{bamoso}"
+author: "Christof Neumann"
+date: "`r Sys.Date()` (built with v. `r packageVersion('bamoso')`)"
+output: 
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+vignette: >
+  %\VignetteIndexEntry{intro to bamoso}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+link-citations: yes
+linkcolor: red
+geometry: margin = 0.7in
+bibliography: ../inst/REFERENCES.bib
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# csl: animal-behaviour.csl
+knitr::opts_chunk$set(echo = TRUE)
+options(width = 120)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(size = 'footnotesize', fig.align = 'center')
+# compile time
+compile_start <- Sys.time()
+
+```
+
+\vspace{2ex}
+
+This document (and package) is work in progress.
+Installation instructions can be found at https://github.com/gobbios/bamoso/.
+If you find mistakes or have suggestions, I'd be very happy to hear about them via https://github.com/gobbios/bamoso/issues.
+
+```{r setup, include=FALSE}
+library(bamoso)
+```
+
+\clearpage
+
+# Quick start
+
+This first example illustrates how to apply the model to pretty much the simplest possible data set.
+We will skip over a lot of the details, and just show the general workflow.
+
+Here we use grooming data from 19 Barbary macaques (*Macaca sylvanus*) recorded with focal animal sampling.
+These grooming data represent frequencies of grooming bouts (so we need a count model eventually) and are undirected.
+We also have information about observation effort, i.e. the time any two individuals *could* have interacted.
+The data are included in the `bamoso` package and are illustrated in figure \ref{fig:syl_net} (only six individuals shown there).
+
+```{r, echo=FALSE, fig.width=8, fig.height=2.5, out.width="80%", fig.align='center', fig.cap="\\label{fig:syl_net}Example data set. Grooming frequencies on the left and dyadic observation hours on the right."}
+par(mar = c(0, 2, 2, 0), family = "serif", cex = 0.7, mfrow = c(1, 2))
+data(grooming)
+sel <- c(1, 4, 6, 10, 12, 19)
+EloSteepness:::plot_matrix(grooming$syl$groom[sel, sel])
+EloSteepness:::plot_matrix(grooming$syl$obseff[sel, sel])
+```
+
+
+```{r, eval = FALSE}
+library(bamoso)
+```
+
+```{r}
+data("grooming")
+groom_mat <- grooming$syl$groom
+obseff_mat <- grooming$syl$obseff
+```
+
+Now we need to convert this data set into a format that is suitable to be passed to Stan.
+There would be a few things to note here but we postpone this to the more extensive example below.
+Here there are no problems with the data and the conversion is straightforward.
+We pass a named list with the interaction matrix (`mats = list(groom = groom_mat)`).
+We indicate that the data represent frequencies or counts (`behav_types = "count"`).
+And we pass the observation effort as list as well (`obseff = list(obseff_mat)`).
+
+```{r}
+standat <- make_stan_data_from_matrices(mats = list(groom = groom_mat),
+                                        behav_types = "count",
+                                        obseff = list(obseff_mat))
+```
+
+Now we can fit the model, using the `sociality_model()` function.
+This function requires only the converted data set as argument.
+If you run this, you might get a warning about a few divergent transitions.
+This is a mild problem here, and we postpone showing how to fix this to further below in the more extensive simulated example.
+
+```{r quick_start_model, cache=TRUE, include=FALSE}
+res <- sociality_model(standat, parallel_chains = 4, 
+                       adapt_delta = 0.9, seed = 2)
+```
+
+```{r, eval = FALSE}
+res <- sociality_model(standat)
+```
+
+Once the model is fitted, we can obtain a quick summary.
+If there were sampling issues (like divergent transitions) the summary will report this as well.
+
+```{r}
+summary(res)
+```
+
+In this document, sampling went without troubles.
+
+Now we can look into model performance by doing posterior predictive checks.
+This just means that we look at how well (or badly) the model is able to predict interaction patterns that resemble what we actually observed.
+And by 'interaction pattern' we simply mean the distribution of grooming bouts across all dyads here.
+There are different ways of going about that, but this one is easy and if there are severe problems, we will be able to detect them here.
+
+```{r, echo=2:5, fig.width=8, fig.height=2.5, out.width="80%", fig.align='center', fig.cap="\\label{fig:syl_net_pp}Posterior predictive checks for Barbary macaque grooming data. On the left: bars represent observed grooming frequencies. The circles represent the median frequencies predicted by the model and the vertical bars the 89\\% interval around these predictions. One the right: the histogram is the posterior distribution of the maximum number of grooming bouts predicted by the model across all posterior samples. The red line indicates the observed value in the data."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+pp_model(res, xlab = "grooming bouts", ylab = "(predicted) frequency",
+         xbreaks = 20)
+pp_model_stat(res, stat = "max", xlab = "maximum number of grooming bouts",
+              main = "")
+```
+
+The two example checks in figure \ref{fig:syl_net_pp} indicate no obvious problems.
+
+## Visualising the results
+
+Now we can look at the actual results graphically.
+We start by looking at the posteriors for the individual and the dyadic component.
+
+```{r, echo=2:5, fig.width=5, fig.height=2.1, out.width="50%", fig.align='center', fig.cap="\\label{fig:syl_net_soc}Posteriors for the two sociality components."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
+sociality_plot(res)
+```
+
+We can also display the individual-level gregariousness posteriors using `ridge_plot()` (see figure \ref{fig:syl_net_ridge}).
+In principle, this is also possible for the dyadic affinity values, but this becomes cluttered quickly if there are too many dyads to display.
+In the example in figure \ref{fig:syl_net_ridge} only a subset of dyads is therefore displayed.
+
+```{r, echo=2:5, fig.width=8, fig.height=2.9, out.width="80%", fig.align='center', fig.cap="\\label{fig:syl_net_ridge}Posteriors for the two sociality components. The affinity distributions on the right only reflect a subset of 10 dyads."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+ridge_plot(res, greg = TRUE)
+ridge_plot(res, greg = FALSE, sel_subset = 10:20, vert_exp = 15)
+```
+
+## Numerical results
+
+To extract numerical results, there are two functions: `model_summary()` and `extract_samples()`.
+`model_summary()` provides a summary of the posteriors for all the parameters of interest and is simply a data frame.
+
+```{r, results='hide'}
+xsum <- model_summary(res)
+head(xsum)
+```
+
+```{r, echo=FALSE}
+print(head(xsum), digits = 3)
+```
+
+
+We only see the first six rows, but the structure hopefully becomes clear.
+Each row represents one parameter.
+The two top rows represent the estimated variation for the gregariousness and dyadic affinity components (in fact we estimated *standard deviation*).
+This is followed by the estimates for the behavior intercept(s) (there is only one here because we only modeled one behavior).
+Next are the individual gregariousness values, followed by the estimates for all the dyads.
+Alongside the point estimates for the posteriors (mean and median), we get measures of uncertainty around these point estimates (SD, quantiles).
+And finally, there are some diagnostic values from Stan (rhat, ess_bulk and ess_tail).
+
+In order to get the full posteriors, we use `extract_samples()`.
+This requires specifying the parameter(s) for which we want to return the posteriors.
+For example, getting the individual gregariousness values requires `what = "indi_vals"`.\footnote{see the help file (\texttt{?extract\_samples}) for more information.}
+
+```{r}
+e <- extract_samples(res, what = "indi_vals")
+head(round(e[, 1:5], 3))
+```
+
+## Summary
+
+This was a brief run through a simple use case of estimating individual-level and dyad-level propensities to interact.
+It illustrated the key functions of the `bamoso` package, mostly with their default settings.
+
+\clearpage
+
+# An example with simulated data
+
+We now turn to an example that uses simulated interaction data.
+To generate these data we use a function included in the package that served as backbone for the evaluations in the manuscript.
+The key settings for data generation are the arguments for the magnitude of individual- and dyad-level variation (`indi_sd=` and `dyad_sd=`).
+Both values were chosen to be fairly large.
+We simulate two behaviors, one a count behavior and the second a proportion.
+Both also have their own observation effort specified, varying between 5 and 100 'hours' for the count behavior, and between 5 and 100 'trials' for the proportion\footnote{Note that the proportion is actually also coded as a count, i.e. `number of successes', which in combination with the `trials' provided results in a proportion.}.
+The behavior intercepts are both set to -3, which corresponds to a fairly low baseline for each behavior\footnote{For a count variable an intercept of $-3$ corresponds to a rate of $0.05$ events per 1 unit of observation effort ($exp(-3) = 0.0498$). For the proportion a baseline of $-3$ corresponds to probability of success in a single `trial' of $0.05$ ($\textrm{logit}^{-1}(-3) = 0.0474$)}.
+Recall that these intercepts represent the expected interactions for an average dyad composed of two average individuals.
+
+```{r}
+set.seed(1)
+d <- generate_data(n_ids = 15, n_beh = 2,
+                   behav_types = c("count", "prop"),
+                   indi_sd = 1.5, dyad_sd = 1.5,
+                   beh_intercepts = c(-3, -3),
+                   prop_trials = c(5, 100),
+                   count_obseff = c(5, 100))
+```
+
+The output of `generate_data()` is already pre-processed to simplify the quantitative evaluations presented in the manuscript.
+In order to make this example somewhat more realistic, we extract data from it that reflects of what one would typically start with, i.e. interaction matrices and dyadic observation effort (as in the quick start example above).
+We also label the individuals with letters, which is helpful down the line to keep track of them\footnote{Stan only works with numeric data so there is no way in Stan to track individuals by their id. Instead, we keep track of ids indirectly, by storing them in the Stan data with a little trick (named vectors).}
+
+```{r}
+m1 <- d$processed$interaction_matrices[[1]]
+m2 <- d$processed$interaction_matrices[[2]]
+colnames(m1) <- rownames(m1) <- LETTERS[1:15]
+colnames(m2) <- rownames(m2) <- LETTERS[1:15]
+
+o1 <- m1 - m1
+o1[d$standat$dyads_navi] <- d$input_data$obseff[, 1]
+o2 <- m2 - m2
+o2[d$standat$dyads_navi] <- d$input_data$obseff[, 2]
+```
+
+
+```{r, echo=FALSE, eval=TRUE, fig.width=7, fig.height=4.2, fig.cap="\\label{fig:ex2_mats}Interaction matrices of two behaviors (top row), and two observation effort matrices (bottom row).", out.width="60%", fig.align='center'}
+par(mar = c(0, 1.6, 2.6, 0), family = "serif", cex = 0.7, mfrow = c(2, 2))
+sel <- 7:12
+EloSteepness:::plot_matrix(m1[sel, sel], greyout = 0)
+title(main = "interactions 1", line = 1.6)
+EloSteepness:::plot_matrix(m2[sel, sel], greyout = 0)
+title(main = "interactions 2", line = 1.6)
+EloSteepness:::plot_matrix(round(o1[sel, sel], 1), greyout = 0)
+title(main = "effort 1", line = 1.6)
+EloSteepness:::plot_matrix(o2[sel, sel], greyout = 0)
+title(main = "effort 2", line = 1.6)
+```
+
+So we end up with two interaction matrices, and with two matrices for observation effort.
+For the first behavior, the interactions are counts while the observation effort is continuous (think observation time) (left column in figure \ref{fig:ex2_mats}).
+For the second behavior, the interactions are also counts, but the observation effort is also recorded as counts, which results in a proportion (right column in figure \ref{fig:ex2_mats}).
+
+## The first behavior
+
+Although we generated two behaviors above, we start with one.
+The first step converts the dyadic data (and observation effort) into a format that can be passed to Stan.
+If we supply interaction data and observation effort, we need to make sure that the two matrices match, i.e. they need to have the same dimensions and they need to be ordered in the same way.
+The easiest way of achieving this is to use column and row names.
+Currently, there is a rudimentary function `check_data()` to check for consistency in the data, which should flag some (but likely not all) problems in the data.
+
+```{r, eval = TRUE}
+check_data(mats = list(groom = m1),
+           behav_types = c("count"),
+           obseff = list(o1))
+```
+
+Now we prepare the data.
+We require two lists, one for the interaction matrix and one for the observation effort.
+Ideally, we name the interaction matrix when creating the list (`mats = list(groom = m1)`), so that later in any output we can find back the corresponding values by referencing the name(s) supplied here (rather than by their cryptic Stan variable names).
+If the interaction matrix is not named, the function will make up names (like `behav_A`).
+The observation effort list does not need to be named.
+
+As far as specifying the `behav_types=` goes:
+This determines which statistical model will be applied to a given interaction matrix.
+Table \ref{tab:dat_types} lists the possibilities.
+
+\begin{table}[b]
+\centering
+\caption{Interaction types and matching observation effort specification supported in \texttt{basomo}.}
+\label{tab:dat_types}
+\begin{tabular}{p{3cm}p{4cm}p{4cm}}
+\hline
+name in \texttt{basomo} & interactions & observation effort\\ 
+\hline
+\texttt{count} & frequencies, counts (integers) & positive continuous\\ 
+\texttt{prop} & counts (integers), `successes' & counts (integers), `trials'\\ 
+\texttt{dur\_beta} & continuous proportion (between 0 and 1) & NA\\ 
+\texttt{dur\_gamma} & positive continuous & positive continuous\\ 
+\hline
+\end{tabular}
+\end{table}
+
+
+
+
+```{r}
+sdat1 <- make_stan_data_from_matrices(mats = list(groom = m1),
+                                      behav_types = c("count"),
+                                      obseff = list(o1))
+```
+
+So now we can fit the model.
+As mentioned in the first example, the only required argument for `sociality_model()` is the prepared data (`sdat1` here).
+Additional arguments pertain to setting parameters for `cmdstanr`'s `$sample()` method, which is what is running under the hood.
+In this example, I actually already used one such argument, `seed=3`, which should result in a warning message about divergent transitions.
+
+```{r fit_example_1_1_display, eval = FALSE}
+fit1 <- sociality_model(standat = sdat1, refresh = 0, parallel_chains = 4, seed = 1)
+```
+
+```{r fit_example_1_1, cache=TRUE, include=FALSE}
+fit1 <- sociality_model(standat = sdat1, seed = 3)
+```
+
+Divergent transitions occur quite regularly, but usually can be resolved by setting a higher value to `adapt_delta`.
+So let's do this, and in the process also change a few more settings, just to illustrate how this works.
+
+```{r fit_example_1_2, cache=TRUE, include=FALSE}
+fit1 <- sociality_model(standat = sdat1, seed = 3, adapt_delta = 0.9,
+                        parallel_chains = 4, iter_warmup = 1200)
+```
+
+So here we indicate that we want to run four chains in parallel and also increase the number of warm-up iterations.
+We keep the same seed.
+Now the model should sample fine without warnings.
+Check out the documentation for `sociality_model()` to see other frequently helpful options.
+
+The resulting object is a list with two items, which combines the Stan data used to fit the model and the `cmdstanr` model environment.
+If you are familiar with `cmdstanr` models, you can directly access the model environment via
+
+```{r, eval=FALSE}
+res$mod_res
+```
+
+and take it from there.
+If you are unfamiliar with such objects, the `basomo` package provides a few helper functions to visualize and summarize the results.
+
+Before looking at the results of interest in detail, we look at the model summary.
+
+```{r}
+summary(fit1)
+```
+
+This just gives an overview over the estimated model, and if there were issues with fitting, these will be reported here too.
+
+## Model checks
+
+Next, we go to some visual model checks.
+Because the underlying observed data are discrete (counts in this first example), we use histograms provided by `pp_model()` to look at predictions from the model.\footnote{for continuous data, use density plots from `pp\_model\_dens()`.}
+One thing to be careful about for these kinds of plot is the width of bins for the histogram.
+Here I chose 12 bins, ranging from 0 to 120 (`r max(sdat1$interactions[, 1])` being the value for the dyad that interacted the most).
+Actually, I set the bins as a sequence from $-0.5$ to $119.5$ in steps of $10$ (`bins <- seq(-0.5, 119.5, by = 10)`) to be sure that we cover all values from $0$ through $9$ in the first bin, from $10$ to $19$ in the second and so forth.
+
+```{r, echo=2:10, fig.width=5, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp01}Posterior predictive checks for the entire group."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
+bins <- seq(-0.5, 119.5, by = 10)
+pp_model(mod_res = fit1, xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+axis(2, las = 1, cex.axis = 0.8)
+```
+
+Figure \ref{fig:pp01} shows the observed data (for all dyads) as histogram. 
+For example, there are slightly more than 80 dyads with at most 10 interactions (`r sum(sdat1$interactions[,1] <= 10)` actually).
+The added circles represent the median predicted frequencies for each bin from all model draws (4000 using the default settings).
+Ideally, these median predictions match the observed frequencies closely, and here they do.
+If the model had difficulties to fit the observed data, we would see predictions that are far from the actually observed data.
+
+One thing to note here is that the model predicts values that were never actually observed.
+For example, no dyad was observed interacting between 40 and 50 times (no bar in this bin).
+The model however predicts such values to occur sometimes (median prediction for that bin is 1 interaction).
+This is not problematic per se and we will come back to this below.
+
+In addition the plot shows how far the predictions spread around the medians (aka uncertainty).
+The vertical lines represent 89% credible intervals.
+These intervals were also calculated from all model draws.
+We would like to see that these intervals are not too wide.
+Here they are not, but if they were this just illustrates that our model has not enough information to really make accurate predictions (or that we really have a bad model fit).
+
+One other thing to keep in mind when looking at these predictions is that the assessment of how good the model fit is depends a lot on the resolution, i.e. the bin width.
+In figure \ref{fig:pp01} we used bins of width 10, i.e. we counted dyads that interacted between 0 and 9 times, between 10 and 19 times and so forth.
+For figure \ref{fig:pp02}a we use a finer resolution\footnote{Note that we want to explicitely separate the occurences of 0 and 1 interactions, which is why we set the break points for the bin widths to start at -0.5.}.
+Here we see some (slight) discrepancies between observed and predicted values.
+For example, we observed `r table(sdat1$interactions)["2"]` dyads with 2 interactions, but our model predicted a median of 10 dyads.
+We also observed `r table(sdat1$interactions)["4"]` dyads with 4 interactions, but the model predicted a median of 5 dyads. 
+In this particular example, I would not consider this problematic though because in absolute terms these cases of under- or over-estimation are of small magnitude (we are not predicting 200 dyads when we observed 3).
+
+At the other extreme end, we could use a very small bin width (figure \ref{fig:pp02}b).
+Here the median predictions match the observed data almost perfectly.
+I would not use this plot to conclude that my model fits the data well, but rather I put it here to illustrate the consequences of choosing the bin width.
+
+One last thing these two extreme cases illustrate is how the amount of uncertainty around the median predictions varies with the chosen bin width. 
+For the smaller bin width (figure \ref{fig:pp02}a), the intervals are fairly wide, while the intervals for the very crude bins (figure \ref{fig:pp02}b) are so small that they are not even visible in the figure.
+
+Which bin width to choose is a matter of taste, mostly (I suppose). 
+Bins that are too large won't be useful.
+The goal is to a get a grasp on how well the model performs.
+My personal rule of thumb is to use between 10 to 20 bins (equally distributed along the range of data).
+
+
+```{r, echo=2:20, fig.width=8, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp02}Posterior predictive checks for the entire group with a different resolutions along the x-axis (compare to figure \\ref{fig:pp01}). Note that the first plot is cut at 20 along the x-axis for visual purposes."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+
+bins <- seq(-0.5, 120.5, by = 1)
+pp_model(mod_res = fit1, xlab = "count of behaviour 1", ylab = "frequency", xbreaks = bins, xlim = c(0, 20))
+axis(2, las = 1, cex.axis = 0.8)
+
+bins <- seq(-0.5, 149.5, by = 50)
+pp_model(mod_res = fit1, xlab = "count of behaviour 1", ylab = "frequency", xbreaks = bins, xlim = c(0, 150))
+axis(2, las = 1, cex.axis = 0.8)
+```
+
+To dig into model performance even further, we can stratify the predictions by individual.
+In other words, we can select a specific individual and look at observed and predicted interactions for all dyads that this specific individual was part of.
+We use the same function (`pp_model()`), but supply the argument `selected_id=`.
+Figure \ref{fig:pp03} shows the results for the first three individuals (A through C).
+
+The building parts of these plots are the same as above. 
+There are at least two things to note here.
+First, the uncertainties around the predictions might, on a first glance, appear larger than in the group level plots above.
+But note the range along the vertical axis: we are talking about much smaller number of dyads (each plot only reflects the portion of dyads the selected individual is part of), so in absolute terms these uncertainties are very similar to the ones in the group level plots.
+Second, recall that the model also predicts interaction numbers that were not actually observed.
+Individual C for example, was part of a dyad that interacted `r max((m1 + t(m1))["C", ])` times, which is an extreme value for that particular individual\footnote{It could be that this dyad has a very strong affinity, or both dyad members were extremely gregarious, or we simply observed this dyad for a long time.}.
+Now, the model predicts also values of 90 up to 120 interactions for that dyad.
+The key point here is that this not problematic, but just illustrates that the model is not predicting *perfectly* but in any case does a good job at predicting that this dyad interacts substantially more than the other dyads of individual C.
+
+
+```{r, echo=2:20, fig.width=8, fig.height=2.4, fig.cap="\\label{fig:pp03}Posterior predictive checks for selected individuals."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 3))
+
+bins <- seq(-0.5, 119.5, by = 5)
+
+pp_model(mod_res = fit1, selected_id = "A", xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+legend("top", "A", bty = "n")
+axis(2, las = 1)
+
+pp_model(mod_res = fit1, selected_id = "B", xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+legend("top", "B", bty = "n")
+axis(2, las = 1)
+
+pp_model(mod_res = fit1, selected_id = "C", xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+legend("top", "C", bty = "n")
+axis(2, las = 1)
+```
+
+
+Finally, there are even more ways to illustrate how well or badly the model predicts our observations.
+We could for example look at the maximum value of interactions predicted. 
+A good model would on average predict maximum interactions that are close on average to the observed data.
+So we extract for each model draw the number of interactions for the dyad that interacted the most.
+Figure \ref{fig:pp04}a shows a histogram of these (4,000 by default) maximum values.
+The red line represents what we observed in the actual data.
+The conclusion here is that our model performs well with respect to predicting interaction patterns that are consistent with our observed data.
+Figure \ref{fig:pp04}b shows the same approach for the inter-quartile range. 
+
+At the moment, there are only a handful of these summary statistics defined in `pp_model_stat()` (`"mean"`, `"min"`, `"max"`, `"iqr"`, and `"range_width"`).
+
+
+
+```{r, echo=2:4, fig.width=8, fig.height=3, out.width="80%", fig.align='center', fig.cap="\\label{fig:pp04}Posterior predictive checks for the entire group using summary statistics."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+
+pp_model_stat(mod_res = fit1, stat = "max", main = "", xlab = "max interactions")
+pp_model_stat(mod_res = fit1, stat = "iqr", main = "", xlab = "IQR of interactions")
+```
+
+If you want to dig deeper into to the concept of visual model checks, @gabry2019 is a good starting point.
+
+## Visual model results
+
+Visualization of the key results works the same way as in the first example.
+`sociality_plot()` produces a plot of the posteriors of the variation (the estimated SD, actually) of the two sociality components (figure \ref{fig:xhfegr}).
+There are number of arguments to the function in addition to the one required (`mod_res = fit1`), and below I specify them at their defaults. 
+Their meaning should be self-explanatory.
+Since this model is based on simulated data, we can also add the ground truth for both parameters, which is the vertical line at $1.5$.
+
+```{r, eval = TRUE, echo=2:3, fig.width=7, fig.height=4, out.width="50%", fig.cap="\\label{fig:xhfegr}Individual and dyadic variation components."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
+sociality_plot(mod_res = fit1, do_legend = TRUE, do_dyadic = TRUE, do_indi = TRUE)
+abline(v = 1.5)
+```
+
+
+We can also plot the posteriors of the estimated individual gregariousness and dyadic affinity values with `ridge_plot()` (figure \ref{fig:ubsglsdg}).
+Note that these plots become cluttered quickly depending on the number of individuals in the data set, and this is especially true for plotting dyadic estimates.
+
+
+```{r, eval = TRUE, echo=2:10, fig.width=8, fig.height=5, out.width="80%", fig.align='center', fig.cap="\\label{fig:ubsglsdg}Posteriors for individual gregariousness and dyadic affinity."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(2, 2))
+ridge_plot(fit1)
+ridge_plot(fit1, sel_subset = c("A", "C"))
+ridge_plot(fit1, greg = FALSE, sel_subset = c("F_@_J", "M_@_N", "D_@_L"), vert_exp = 10)
+ridge_plot(fit1, greg = FALSE, sel_subset = c("F", "A_@_B", "D_@_L"), vert_exp = 10)
+```
+
+
+
+## Numeric model results
+
+There are basically two ways of getting numerical output of the model results.
+`model_summary()` returns summaries of the posteriors, and `extract_samples()` extracts the entire posteriors of the primary parameters.
+
+
+`model_summary()` as used below returns a data frame with point estimates (mean and median) and some measures of uncertainty and sampling diagnostics.
+The returned parameters are grouped in the `$categ` column as either `sd` (standard deviations of gregariousness and pairwise affinity), `intercept` (intercepts for all behaviors), `indi_vals` (gregariousness for each individuals) and `dyad_vals` (pairwise affinity for each dyad), which allows filtering.
+The only relevant argument to the function is needed for specifying the quantiles to be returned for each posterior (the default is an 89% interval: `probs = c(0.055, 0.945)`).
+
+```{r, results='hide'}
+modsum <- model_summary(fit1, probs = c(0.1, 0.9))
+head(modsum)
+head(modsum[modsum$categ == "dyad_vals", ])
+```
+
+```{r, echo=FALSE}
+print(head(modsum), digits = 3)
+```
+
+```{r, echo=FALSE}
+print(head(modsum[modsum$categ == "dyad_vals", ]), digits = 3)
+```
+
+
+With `extract_samples()`, we can get the full posteriors for each parameter.
+Here, the output is a matrix, where each row represents one posterior sample (so the total number of rows is by default $4,000$, i.e. $4$ chains each with $1,000$ samples).
+The columns represent the parameters and they are grouped in the same way as in `model_summary()`, i.e. the two standard deviations for gregariousness and affinity, followed by the intercepts for each behavior, followed by the values for each individual and dyad.
+
+```{r, results='hide'}
+post <- extract_samples(fit1)
+head(post)[, 1:12]
+```
+
+```{r, echo=FALSE}
+print(head(post[, 1:12]), digits = 2)
+```
+
+There is one relevant argument for `extract_samples()` is `what=`, and this determines which parameters are returned. 
+The default is to extract all parameters, but this can be changed for example to return only the dyadic affinity values.
+For the remaining options, see the function's help file (`?extract_samples`).
+
+```{r, results='hide'}
+post <- extract_samples(fit1, what = "dyad_vals")
+head(post)[, 1:12]
+```
+
+```{r, echo=FALSE}
+print(head(post[, 1:12]), digits = 2)
+```
+
+
+## The second behavior
+
+Now we turn to the second behavior, which represents a proportion.
+Here, the interaction matrix also contains integers, and crucially, the corresponding observation effort is also recorded as integer values.
+In other words, it's only through the combination of interactions and observation effort that we can actually talk about proportions.
+
+
+Apart from that, everything works the same as in the example(s) above.
+We prepare the data and fit the model.
+
+```{r}
+sdat2 <- make_stan_data_from_matrices(mats = list(prox = m2),
+                                      behav_types = c("prop"),
+                                      obseff = list(o2))
+```
+
+```{r fit_example_2_1_display, eval = FALSE}
+fit2 <- sociality_model(standat = sdat2, seed = 8)
+```
+
+```{r fit_example_2_1, cache=TRUE, include=FALSE}
+fit2 <- sociality_model(standat = sdat2,
+                        refresh = 0, parallel_chains = 4, seed = 8)
+```
+
+We now also run posterior predictive checks, but this time we look at densities rather than at histograms (figure \ref{fig:pp0x}).
+This makes sense if the quantity we want to display can be seen as continuous.\footnote{Technically, these data are still discrete and not continuous, but we proceed anyway for illustration purposes.}
+
+The function we use is `pp_model_dens()`.
+The underlying idea is the same as in `pp_model()`: 
+we plot the density of the observed data (red line in the plot) and combine this with densities from a small number of draws representing predictions from the model (the default is `n_draws=20`).
+A good model leads to predictions that correspond approximately to the observed data.
+
+```{r, echo=2:10, fig.width=5, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp0x}Posterior predictive checks for a behavior representing a proportion."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
+pp_model_dens(mod_res = fit2, xlab = "count of behaviour 2", ylab = "frequency")
+axis(2, las = 1, cex.axis = 0.8)
+```
+
+We can also produce a plot of the two sociality components using `sociality_plot()` (figure \ref{fig:ggrashg}).
+
+```{r, echo=2:3, fig.width=7, fig.height=4, out.width="50%", fig.cap="\\label{fig:ggrashg}Individual and dyadic variation components."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
+sociality_plot(mod_res = fit2)
+abline(v = 1.5)
+```
+
+
+## Combining two behaviors 
+
+It becomes really interesting when we model two behaviors simultaneously. 
+In other words, we want to estimate the underlying sociality components from two or more interaction matrices.
+There is the implicit assumption that such underlying sociality components exist in the first place.
+
+So when preparing the data, we just need to make sure that we combine the two behaviors in question:
+
+```{r}
+sdat3 <- make_stan_data_from_matrices(mats = list(groom = m1, prox = m2),
+                                      behav_types = c("count", "prop"),
+                                      obseff = list(o1, o2))
+```
+
+The fitting of the model then works the same way as before.
+
+```{r fit_example_3_1_display, eval = FALSE}
+fit3 <- sociality_model(standat = sdat3,
+                        refresh = 0, parallel_chains = 4, seed = 3)
+```
+
+```{r fit_example_3_1, cache=TRUE, include=FALSE}
+fit3 <- sociality_model(standat = sdat3,
+                        refresh = 0, parallel_chains = 4, seed = 3)
+```
+
+```{r}
+summary(fit3)
+```
+
+
+The most important thing to remember when working with more than one behavior is that we have to declare for which behavior we want to make predictions when using `pp_model()` and `pp_model_dens()` (figure \ref{fig:pp05}).
+
+```{r, echo = 2:8, fig.width=8, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp05}Posterior predictive checks for two behaviors."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+
+pp_model(mod_res = fit3, xvar = "groom",
+         xlab = "grooming frequency", ylab = "frequency")
+pp_model_dens(mod_res = fit3, xvar = "prox",
+         xlab = "prox frequency", ylab = "frequency")
+```
+
+
+\clearpage
+
+# Extending the model
+
+to be written
+
+\clearpage
+
+# Intuitions
+
+In this section, I just want to demonstrate a few intuitions I have/had and see how they play out.
+
+## Uncertainty and observation effort
+
+to be written
+
+
+```{r, echo=FALSE, eval = TRUE}
+# this is forced to be evaluated!
+stime <- "unknown"
+if (identical(Sys.getenv("NOT_CRAN"), "true")) {
+  stime <- round(as.numeric(difftime(time2 = compile_start, time1 = Sys.time(), units = "mins")), 1)
+}
+```
+
+
+This document took `r stime` minutes to compile.
+
+
+\clearpage
+
+# References

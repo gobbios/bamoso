@@ -1,0 +1,7 @@
+^bamoso\.Rproj$
+^\.Rproj\.user$
+_helpers.R
+data-raw/
+^doc$
+^Meta$
+intro.pdf

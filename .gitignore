@@ -1,0 +1,17 @@
+*
+!/**/
+!*.*
+
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+bamoso.Rproj
+!DESCRIPTION
+!NAMESPACE
+inst/doc
+data-raw/
+_helpers.R
+/doc/
+/Meta/
