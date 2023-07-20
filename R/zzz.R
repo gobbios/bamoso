@@ -41,3 +41,28 @@
 #'                                    lambda = exp(-0.5 + 1.2 * indivals))
 #'
 "workflow_example"
+
+#' data for kangaroo reproductive success
+#' @details
+#' \code{kangaroos_rawdata} contains a subset 47 individuals of the raw data
+#' taken from the primary sources (see references). It is formatted as a list.
+#' The first item contains as a list the raw association data (one matrix
+#' per year). The second item lists the fitness outcomes and values for
+#' control variables for each individual in each year.
+#'
+#' \code{kangaroos_subset} contains a list derived from the association data
+#' and the fitness outcome taken from \code{kangaroos_rawdata}. It also contains
+#' the values of the variables included in the model that were not directly
+#' quantified from the association data (parity status, residual group size,
+#' number of sightings). It is formatted such that it can be passed to Stan.
+#'
+#' @aliases kangaroos_rawdata
+#'
+#' @references
+#' \insertRef{menz2020}{basr}
+#'
+#' @source
+#' \insertRef{menz2020data}{basr}
+#'
+#' @format a list with named items to be passed to Stan.
+"kangaroos_subset"

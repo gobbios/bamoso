@@ -18,7 +18,7 @@ Depends:
 Imports:
   Rdpack,
   posterior,
-  brms
+  brms,
 LazyData: true
 Suggests: 
     knitr,
@@ -26,7 +26,9 @@ Suggests:
     testthat (>= 3.0.0),
     bookdown,
     xtable,
-    EloSteepness
+    EloSteepness,
+    lme4,
+    igraph
 Config/testthat/edition: 3
 RdMacros: Rdpack
 VignetteBuilder: knitr
