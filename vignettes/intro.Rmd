@@ -296,13 +296,13 @@ sdat1 <- make_stan_data_from_matrices(mats = list(groom = m1),
 So now we can fit the model.
 As mentioned in the first example, the only required argument for `sociality_model()` is the prepared data (`sdat1` here).
 Additional arguments pertain to setting parameters for `cmdstanr`'s `$sample()` method, which is what is running under the hood.
-In this example, I actually already used one such argument, `seed=3`, which should result in a warning message about divergent transitions.
+In this example, I actually already used one such argument, `seed=3`, which should result in a warning message about divergent transitions.\footnote{The seed argument just fixes the generation of random numbers to a replicable state. In this particular example I chose it such that we actually do get divergent transitions, but it doesn't \textit{cause} the divergent transitions. Try it out with different values and you will see that sometimes divergent transitions occur and sometimes they don't.}
 
-```{r fit_example_1_1_display, eval = FALSE}
+```{r fit_example_1_1_display, eval = FALSE, echo=FALSE}
 fit1 <- sociality_model(standat = sdat1, refresh = 0, parallel_chains = 4, seed = 1)
 ```
 
-```{r fit_example_1_1, cache=TRUE, include=FALSE}
+```{r fit_example_1_1, cache=TRUE, eval = FALSE}
 fit1 <- sociality_model(standat = sdat1, seed = 3)
 ```
 
@@ -314,8 +314,13 @@ fit1 <- sociality_model(standat = sdat1, seed = 3, adapt_delta = 0.9,
                         parallel_chains = 4, iter_warmup = 1200)
 ```
 
+```{r fit_example_1_2_display, cache=FALSE, eval = FALSE}
+fit1 <- sociality_model(standat = sdat1, seed = 3, adapt_delta = 0.9,
+                        parallel_chains = 4, iter_warmup = 1200)
+```
+
 So here we indicate that we want to run four chains in parallel and also increase the number of warm-up iterations.
-We keep the same seed.
+We keep the same random seed.
 Now the model should sample fine without warnings.
 Check out the documentation for `sociality_model()` to see other frequently helpful options.
 
