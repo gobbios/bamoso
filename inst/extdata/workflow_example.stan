@@ -1,4 +1,4 @@
-// this is the model for the toy example in the manuscript
+// this is the model for the workflow example in the manuscript
 // coded for cmdstanr
 
 data {
