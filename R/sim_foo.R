@@ -3,7 +3,7 @@
 #' fit the model with simulated data and store results to file
 #'
 #' @param ... arguments for \code{\link{generate_data}}
-#' @param outpath character, output path (defaults to R's \code{\link{tempdir()}})
+#' @param outpath character, output path (defaults to R's \code{\link{tempdir}})
 #' @param outfilename character, output file name (defaults to a random string)
 #' @param silent logical, suppress all textual output
 #' @param diagnostics logical, report problems with sampling
@@ -11,6 +11,8 @@
 #' @param refresh refresh argument
 #' @param iter_warmup iter_warmup argument
 #' @param iter_sampling iter_sampling argument
+#'
+#' @importFrom utils capture.output
 #'
 #' @return writes an rds file to the specified location, which contains a list
 #'         with the data generation settings, generated data,

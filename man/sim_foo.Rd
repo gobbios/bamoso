@@ -19,7 +19,7 @@ sim_foo(
 \arguments{
 \item{...}{arguments for \code{\link{generate_data}}}
 
-\item{outpath}{character, output path (defaults to R's \code{\link{tempdir()}})}
+\item{outpath}{character, output path (defaults to R's \code{\link{tempdir}})}
 
 \item{outfilename}{character, output file name (defaults to a random string)}
 
