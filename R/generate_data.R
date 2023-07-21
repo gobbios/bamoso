@@ -229,6 +229,14 @@ generate_data <- function(n_ids = NULL,
                                  shape1 = mu * phi,
                                  shape2 = (1 - mu) * phi)
       # make sure no 0 and 1 in the results
+      if (any(interactions[, i] == 1)) {
+        sel <- which(interactions[, i] == 1)
+        interactions[sel, i] <- interactions[sel, i] - runif(length(sel), 0, 0.00001)
+      }
+      if (any(interactions[, i] == 0)) {
+        sel <- which(interactions[, i] == 0)
+        interactions[sel, i] <- interactions[sel, i] + runif(length(sel), 0, 0.00001)
+      }
       # interactions[, i] <- (interactions[, i] * (n_dyads - 1) + 0.5) / n_dyads
 
       beta_shape_pos[i] <- i

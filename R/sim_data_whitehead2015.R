@@ -32,7 +32,7 @@
 #'
 #' @references
 #'
-#' \insertRef{whitehead2015}{basr}
+#' \insertRef{whitehead2015}{bamoso}
 #'
 #' @export
 #'

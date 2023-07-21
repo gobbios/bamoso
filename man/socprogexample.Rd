@@ -15,10 +15,8 @@ socprogexample
 socprog example: raw association data and metrics calculated within SOCPROG.
 }
 \references{
-\insertRef{cairns1987}{basr}
+\insertRef{whitehead2008}{bamoso}
 
-\insertRef{whitehead2008}{basr}
-
-\insertRef{whitehead2015}{basr}
+\insertRef{whitehead2015}{bamoso}
 }
 \keyword{datasets}

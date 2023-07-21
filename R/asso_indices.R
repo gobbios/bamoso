@@ -11,11 +11,11 @@
 #'                as output, with the supplied index. If \code{NULL}
 #'                (the default), a data.frame is returned with all indices.
 #' @references
-#' \insertRef{cairns1987}{basr}
+#' \insertRef{cairns1987}{bamoso}
 #'
-#' \insertRef{whitehead2008}{basr}
+#' \insertRef{whitehead2008}{bamoso}
 #'
-#' \insertRef{whitehead2015}{basr}
+#' \insertRef{whitehead2015}{bamoso}
 #'
 #' @return a data frame (or matrix)
 #' @export

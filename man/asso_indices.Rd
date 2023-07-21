@@ -51,9 +51,9 @@ identical(round(ares$greg_pred_sri, 10),
 
 }
 \references{
-\insertRef{cairns1987}{basr}
+\insertRef{cairns1987}{bamoso}
 
-\insertRef{whitehead2008}{basr}
+\insertRef{whitehead2008}{bamoso}
 
-\insertRef{whitehead2015}{basr}
+\insertRef{whitehead2015}{bamoso}
 }

@@ -14,11 +14,10 @@
 #' socprog example: raw association data and metrics calculated within SOCPROG.
 #'
 #' @references
-#' \insertRef{cairns1987}{basr}
 #'
-#' \insertRef{whitehead2008}{basr}
+#' \insertRef{whitehead2008}{bamoso}
 #'
-#' \insertRef{whitehead2015}{basr}
+#' \insertRef{whitehead2015}{bamoso}
 #'
 #' @format a list with two items. First item are the raw associations,
 #'         second are the different metrics returned by SOCPROG.
@@ -59,10 +58,10 @@
 #' @aliases kangaroos_rawdata
 #'
 #' @references
-#' \insertRef{menz2020}{basr}
+#' \insertRef{menz2020}{bamoso}
 #'
 #' @source
-#' \insertRef{menz2020data}{basr}
+#' \insertRef{menz2020data}{bamoso}
 #'
 #' @format a list with named items to be passed to Stan.
 "kangaroos_subset"

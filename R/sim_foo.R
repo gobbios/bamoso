@@ -3,6 +3,14 @@
 #' fit the model with simulated data and store results to file
 #'
 #' @param ... arguments for \code{\link{generate_data}}
+#' @param indi_sd numeric, SD for gregariousness (defaults to
+#'                \code{runif(1, 0.1, 3)})
+#' @param dyad_sd numeric, SD for dyadic affinity (defaults to
+#'                \code{runif(1, 0.1, 3)})
+#' @param intercept_range numeric of length two, determines the range for
+#'                        intercepts. Defaults to \code{c(-3, 0)}. How many
+#'                        intercepts are needed is determined inside the
+#'                        function.
 #' @param outpath character, output path (defaults to R's \code{\link{tempdir}})
 #' @param outfilename character, output file name (defaults to a random string)
 #' @param silent logical, suppress all textual output
@@ -45,6 +53,9 @@
 
 
 sim_foo <- function(...,
+                    indi_sd = runif(1, 0.1, 3),
+                    dyad_sd = runif(1, 0.1, 3),
+                    intercept_range = c(-3, 0),
                     outpath = NULL,
                     outfilename = NULL,
                     silent = TRUE,
@@ -57,13 +68,18 @@ sim_foo <- function(...,
   xx <- capture.output(mod <- suppressMessages(get_model()))
 
   n_beh <- sample(1:3, 1)
-  behav_types <- sample(c("count", "prop"), n_beh, replace = TRUE)
+  behav_types <- sample(c("count", "prop", "dur_gamma", "dur_beta"), n_beh, replace = TRUE)
+  intercepts <- runif(n_beh, intercept_range[1], intercept_range[2])
 
   # occasionally, an empty matrix is produced (mostly in the gamma setting)
   good_to_go <- FALSE
   while (!good_to_go) {
-    sdata <- generate_data(n_beh = n_beh, behav_types = behav_types,
-                           indi_sd = runif(1, 0.1, 3), dyad_sd = runif(1, 0.1, 3), ...)
+    sdata <- generate_data(n_beh = n_beh,
+                           behav_types = behav_types,
+                           beh_intercepts = intercepts,
+                           indi_sd = indi_sd,
+                           dyad_sd = dyad_sd,
+                           ...)
     if (!sdata$input_data$empty) good_to_go <- TRUE
   }
 

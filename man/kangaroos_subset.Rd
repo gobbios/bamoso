@@ -9,7 +9,7 @@
 a list with named items to be passed to Stan.
 }
 \source{
-\insertRef{menz2020data}{basr}
+\insertRef{menz2020data}{bamoso}
 }
 \usage{
 kangaroos_subset
@@ -31,6 +31,6 @@ quantified from the association data (parity status, residual group size,
 number of sightings). It is formatted such that it can be passed to Stan.
 }
 \references{
-\insertRef{menz2020}{basr}
+\insertRef{menz2020}{bamoso}
 }
 \keyword{datasets}

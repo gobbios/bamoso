@@ -6,6 +6,9 @@
 \usage{
 sim_foo(
   ...,
+  indi_sd = runif(1, 0.1, 3),
+  dyad_sd = runif(1, 0.1, 3),
+  intercept_range = c(-3, 0),
   outpath = NULL,
   outfilename = NULL,
   silent = TRUE,
@@ -18,6 +21,17 @@ sim_foo(
 }
 \arguments{
 \item{...}{arguments for \code{\link{generate_data}}}
+
+\item{indi_sd}{numeric, SD for gregariousness (defaults to
+\code{runif(1, 0.1, 3)})}
+
+\item{dyad_sd}{numeric, SD for dyadic affinity (defaults to
+\code{runif(1, 0.1, 3)})}
+
+\item{intercept_range}{numeric of length two, determines the range for
+intercepts. Defaults to \code{c(-3, 0)}. How many
+intercepts are needed is determined inside the
+function.}
 
 \item{outpath}{character, output path (defaults to R's \code{\link{tempdir}})}
 
