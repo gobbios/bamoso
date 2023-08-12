@@ -89,12 +89,25 @@ Currently, four data types/distributions via \code{behav_types}
 are supported are \code{"count"}, \code{"prop"},
 \code{"dur_gamma"} and \code{"dur_beta"}.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{     For the dispersion parameters, the input vector must be of the same
+\if{html}{\out{<div class="sourceCode">}}\preformatted{     For the dispersion parameters the input vector must be of the same
      length and the indexing must match \code{behav_types}. For example,
      \code{behav_types = c("count", "dur_gamma")} requires a vector of
      length 2, e.g. \code{disp_pars_gamma = c(0, 0.6)}, where the
      first item will be ignored, i.e. only the second entry is
      relevant.
+
+     Sometimes the data generation leads to extreme interaction values.
+     For \code{behav_types = "dur_gamma"} sometimes 0's occur in
+     the final data (I suspect due to machine precision). If such cases
+     occur, the data generation will add the smallest non-zero value
+     to such dyads. For the same reason,
+     \code{behav_types = "dur_beta"} sometimes generates 0 and 1 values,
+     which are also replaced by adding (for 0s) or subtracting (for 1s)
+     tiny random numbers. For \code{behav_types = c("count", "prop")},
+     sometimes completely empty matrices are produced (no dyad ever
+     'interacted'). While such matrices are an interesting edge case,
+     they represent a challenge for the model with its default settings.
+     Therefore, if such cases occur, the function will return a warning.
 }\if{html}{\out{</div>}}
 }
 \examples{

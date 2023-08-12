@@ -41,12 +41,26 @@
 #'          are supported are \code{"count"}, \code{"prop"},
 #'          \code{"dur_gamma"} and \code{"dur_beta"}.
 #'
-#'          For the dispersion parameters, the input vector must be of the same
+#'          For the dispersion parameters the input vector must be of the same
 #'          length and the indexing must match \code{behav_types}. For example,
 #'          \code{behav_types = c("count", "dur_gamma")} requires a vector of
 #'          length 2, e.g. \code{disp_pars_gamma = c(0, 0.6)}, where the
 #'          first item will be ignored, i.e. only the second entry is
 #'          relevant.
+#'
+#'          Sometimes the data generation leads to extreme interaction values.
+#'          For \code{behav_types = "dur_gamma"} sometimes 0's occur in
+#'          the final data (I suspect due to machine precision). If such cases
+#'          occur, the data generation will add the smallest non-zero value
+#'          to such dyads. For the same reason,
+#'          \code{behav_types = "dur_beta"} sometimes generates 0 and 1 values,
+#'          which are also replaced by adding (for 0s) or subtracting (for 1s)
+#'          tiny random numbers. For \code{behav_types = c("count", "prop")},
+#'          sometimes completely empty matrices are produced (no dyad ever
+#'          'interacted'). While such matrices are an interesting edge case,
+#'          they represent a challenge for the model with its default settings.
+#'          Therefore, if such cases occur, the function will return a warning.
+#'
 #'
 #' @importFrom stats cor density rnorm rpois runif rbinom rgamma
 #' @importFrom stats plogis rbeta
@@ -216,6 +230,13 @@ generate_data <- function(n_ids = NULL,
       interactions[, i] <- rgamma(n = n_dyads, shape = shape, rate = rate)
 
       gamma_shape_pos[i] <- i
+
+      # check for any 0s
+      if (any(interactions[, i] == 0)) {
+        sel <- which(interactions[, i] == 0)
+        sel2 <- which(interactions[, i] > 0)
+        interactions[sel, i] <- min(interactions[sel2, i])
+      }
     }
 
     if (btypes[i] == "dur_beta") {
@@ -281,10 +302,10 @@ generate_data <- function(n_ids = NULL,
   empty <- any(unlist(lapply(imats, sum)) == 0)
   if (empty) {
     if (interactive()) {
-      warning("there was an empty matrix generated",
+      warning("at least one of the matrices is empty",
               call. = FALSE)
     } else {
-      message("there was an empty matrix generated")
+      message("at least one of the matrices is empty")
     }
   }
   #
