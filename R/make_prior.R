@@ -55,8 +55,10 @@ make_prior <- function(response, type, obseff = NULL) {
     if (type == "dur_beta") {
       lresp <- round(qlogis(response), 1)
     }
+    if (any(is.infinite(lresp))) lresp[is.infinite(lresp)] <- 2.5
     location <- round(median(lresp), 1)
     if (location < -2.5) location <- -2.5
+    # if (is.infinite(location)) location <- 2.5
   }
 
 

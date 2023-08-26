@@ -66,6 +66,7 @@ sim_foo <- function(...,
                     iter_sampling = 1000) {
 
   xx <- capture.output(mod <- suppressMessages(get_model()))
+  rm(xx)
 
   n_beh <- sample(1:3, 1)
   behav_types <- sample(c("count", "prop", "dur_gamma", "dur_beta"), n_beh, replace = TRUE)
