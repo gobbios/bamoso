@@ -36,7 +36,12 @@
 
 sociality_model <- function(standat,
                             ...) {
-  mod <- get_model()
+
+  modeltype <- "simple"
+  if (!is.null(standat$indi_cat_pred)) {
+    modeltype <- "indi_cat"
+  }
+  mod <- get_model(type = modeltype)
   res <- mod$sample(data = standat, ...)
   out <- list(standat = standat, mod_res = res)
   class(out) <- "dyadicmodel"

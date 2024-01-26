@@ -1,4 +1,4 @@
-#' convert interaction matrices into data list ready for stan
+#' convert interaction matrices into data list ready for Stan
 #'
 #' @param mats list with (named) square interaction matrices
 #' @param obseff numeric vector with observation effort. Must be positive
@@ -13,6 +13,13 @@
 #'                    \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 #'                    At its default all behaviors are considered
 #'                    to be \code{"count"}.
+#' @param indi_cat_pred numeric or integer vector with dummy-coded individual-
+#'                      level predictor. Must contain one value per individual
+#'                      and can only reflect two categories (as 0's and 1's)!
+#'                      Examples are sex (female or not female), age (old or
+#'                      not old), residence status (resident or migrant).
+#'                      Default is \code{NULL} and if so, will be omitted
+#'                      in the output object.
 #'
 #' @details If supplied via column names in \code{mats[[1]]}, id codes are
 #'          present in the output as names of vector of zeros.
@@ -46,6 +53,8 @@
 #'                                  individuals' codes}
 #'     \item{\code{$beh_names}} {vector of 0's with names corresponding to
 #'                                   behavior codes}
+#'     \item{\code{$indi_cat_pred}} {vector of 0's and 1's reflecting the
+#'                                   individual-level categorical predictor}
 #'  }
 #' @export
 #'
@@ -60,16 +69,28 @@
 #' matlist <- list(beh1 = m1, beh2 = m2)
 #' make_stan_data_from_matrices(mats = matlist)
 #'
+#' # adding a predictor for individual-level axis
+#' make_stan_data_from_matrices(mats = matlist,
+#'                              indi_cat_pred = sample(c(0, 1), 8, TRUE))
+#'
 #' o <- rep(0.5, 8)
 #' o[1:2] <- c(1.5, 10.5)
 #' make_stan_data_from_matrices(mats = matlist, obseff = o)$obseff
 
 make_stan_data_from_matrices <- function(mats,
                                          behav_types = NULL,
-                                         obseff = NULL) {
+                                         obseff = NULL,
+                                         indi_cat_pred = NULL
+                                         ) {
   n_ids <- ncol(mats[[1]])
   n_dyads <- n_ids * (n_ids - 1) * 0.5
   n_beh <- length(mats)
+
+  if (!is.null(indi_cat_pred)) {
+    if (length(indi_cat_pred) != n_ids) {
+      stop("individual-level predictor doesn't have correct length", call. = FALSE)
+    }
+  }
 
   # deal with behavior types
   if (is.null(behav_types)) {
@@ -202,22 +223,27 @@ make_stan_data_from_matrices <- function(mats,
   bdata <- c(behav_types_num, 0)
   names(bdata) <- c(behav_types, "0")
 
-  list(id1 = index[, 1],
-       id2 = index[, 2],
-       behav_types = bdata,
-       interactions = apply(interactions, 2, as.integer),
-       interactions_cont = apply(interactions, 2, as.numeric),
-       n_beh = length(mats),
-       n_ids = n_ids,
-       n_dyads = n_dyads,
-       dyads_navi = as.matrix(index[, 1:2]),
-       obseff = obseff_dat,
-       obseff_int = apply(obseff_dat, 2, as.integer),
-       gamma_shape_pos = gamma_shape_pos_mod,
-       gamma_shape_n = sum(gamma_shape_pos > 0),
-       beta_shape_pos = beta_shape_pos_mod,
-       beta_shape_n = sum(beta_shape_pos > 0),
-       prior_matrix = prior_matrix,
-       id_codes = vec,
-       beh_names = vec_behaviors)
+  out <- list(id1 = index[, 1],
+              id2 = index[, 2],
+              behav_types = bdata,
+              interactions = apply(interactions, 2, as.integer),
+              interactions_cont = apply(interactions, 2, as.numeric),
+              n_beh = length(mats),
+              n_ids = n_ids,
+              n_dyads = as.integer(n_dyads),
+              dyads_navi = as.matrix(index[, 1:2]),
+              obseff = obseff_dat,
+              obseff_int = apply(obseff_dat, 2, as.integer),
+              gamma_shape_pos = gamma_shape_pos_mod,
+              gamma_shape_n = sum(gamma_shape_pos > 0),
+              beta_shape_pos = beta_shape_pos_mod,
+              beta_shape_n = sum(beta_shape_pos > 0),
+              prior_matrix = prior_matrix,
+              id_codes = vec,
+              beh_names = vec_behaviors)
+
+  if (!is.null(indi_cat_pred)) {
+    out$indi_cat_pred <- indi_cat_pred
+  }
+  out
 }

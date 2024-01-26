@@ -39,3 +39,9 @@ test_that("make_stan_data_from_matrices contains the correct list elements", {
   expect_true("beh_names" %in% names(standat))
   expect_true("behav_types" %in% names(standat))
 })
+
+
+# dimensions match
+nrow_interactions <- nrow(standat$interactions)
+nrow_interactions_cont <- nrow(standat$interactions_cont)
+

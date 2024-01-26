@@ -65,3 +65,21 @@
 #'
 #' @format a list with named items to be passed to Stan.
 "kangaroos_subset"
+
+#' data for shark associations
+#' @details
+#' \code{sharks} contains association data on 83 individually identified
+#' blacktip reef sharks (\emph{Carcharhinus melanopterus}).
+#' This is a subset of the original data, which was constrained to
+#' only contain individuals for which relatedness data is available.
+#'
+#'
+#' @references
+#' \insertRef{mourier2021}{bamoso}
+#'
+#' @source
+#' \insertRef{mourier2020}{bamoso}
+#'
+#' @format a list with named items.
+"sharks"
+

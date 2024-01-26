@@ -15,9 +15,18 @@
 #'                       intercepts on the linear scale for each behavior
 #'                       (the group-level average). Default is random
 #'                       (\code{rnorm(n_beh, -1, 2)}).
-#' @param dyadic_covariate_slope numeric, default is 0. Fits an additional
-#'        covariate (stdnormal) with this slope to contribute to the linear
-#'        predictor.
+#' @param indi_covariate_slope numeric, default is \code{NULL}. Fits an
+#'                             additional covariate effect on the
+#'                             gregariousness vector. (think: age)
+#' @param indi_cat_slope numeric, default is \code{NULL}. Fits an additional
+#'                       categorical effect on the gregariousness vector.
+#'                       (think: sex)
+#' @param dyadic_covariate_slope numeric, default is \code{NULL}. Fits an
+#'                               additional covariate effect on the
+#'                               affinity vector. (think: relatedness)
+#' @param dyadic_cat_slope numeric, default is \code{NULL}. Fits an additional
+#'                         categorical effect on the affinity vector.
+#'                         (think: same-sex?)
 #' @param prop_trials numeric of length 1 or 2, default is \code{100}, i.e.
 #'        per dyad there are 100 'trials' observed. If numeric of length 2,
 #'        each dyad gets its own number of trials ranging between the two values
@@ -91,19 +100,31 @@
 #' ex$processed$interaction_matrices[[2]]
 #'
 
-# n_ids=8
-# indi_sd=2.5
-# dyad_sd=1.2
-# n_beh=2
-# beh_intercepts=c(1.2, -2)
-# exact=TRUE
+# n_ids = 10
+# n_beh = 2
+# behav_types = "count"
+# indi_sd = NULL
+# dyad_sd = NULL
+# indi_covariate_slope = NULL
+# indi_cat_slope = NULL
+# dyadic_covariate_slope = NULL
+# dyadic_cat_slope = NULL
+# disp_pars_gamma = NULL
+# disp_pars_beta = NULL
+# beh_intercepts = NULL
+# prop_trials = 100
+# count_obseff = 1
+# exact = TRUE
 
 generate_data <- function(n_ids = NULL,
-                          n_beh = NULL,
+                          n_beh = 1,
                           behav_types = "count",
                           indi_sd = NULL,
                           dyad_sd = NULL,
-                          dyadic_covariate_slope = 0, # slope for additional dyadic nuissance parameter
+                          indi_covariate_slope = NULL,
+                          indi_cat_slope = NULL,
+                          dyadic_covariate_slope = NULL, # slope for additional dyadic parameter
+                          dyadic_cat_slope = NULL,
                           disp_pars_gamma = NULL, # for durations as gamma
                           disp_pars_beta = NULL, # for durations as beta
                           beh_intercepts = NULL,
@@ -111,9 +132,33 @@ generate_data <- function(n_ids = NULL,
                           count_obseff = 1, # observation effort for count data
                           exact = TRUE) {
 
+  if (isTRUE(n_ids < 4)) stop("we need at least four individuals", call. = FALSE)
+
   # those used to be function arguments, but were removed
   indi_intercept <- 0
   dyad_intercept <- 0
+
+  do_indi_covariate_slope <- TRUE
+  do_indi_cat_slope <- TRUE
+  do_dyadic_covariate_slope <- TRUE
+  do_dyadic_cat_slope <- TRUE
+
+  if (is.null(indi_covariate_slope)) {
+    indi_covariate_slope <- 0
+    do_indi_covariate_slope <- FALSE
+  }
+  if (is.null(indi_cat_slope)) {
+    indi_cat_slope <- 0
+    do_indi_cat_slope <- FALSE
+  }
+  if (is.null(dyadic_covariate_slope)) {
+    dyadic_covariate_slope <- 0
+    do_dyadic_covariate_slope <- FALSE
+  }
+  if (is.null(dyadic_cat_slope)) {
+    dyadic_cat_slope <- 0
+    do_dyadic_cat_slope <- FALSE
+  }
 
   if (is.null(n_ids)) n_ids <- sample(5:30, 1)
   if (is.null(n_beh)) n_beh <- sample(1:4, 1)
@@ -127,16 +172,40 @@ generate_data <- function(n_ids = NULL,
   n_dyads <- n_ids * (n_ids - 1) / 2
   dyads <- t(combn(seq_len(n_ids), 2))
 
-  # individual sociality
-  indi_soc_vals <- rnorm(n = n_ids, mean = indi_intercept, sd = indi_sd)
+
+  # create sociality values (individual-level and dyad-level)
+
+  # individual-level data
+  indi_data <- data.frame(id = seq_len(n_ids),
+                          feature_cat = sample(c(0, 1), n_ids, replace = TRUE),
+                          feature_cont = rnorm(n_ids)
+  )
+  # make sure that there are at least two for each category
+  sel <- sample(seq_len(n_ids), 4)
+  indi_data$feature_cat[sel] <- c(1, 1, 0, 0)
+
+  indi_soc_vals_ini <- rnorm(n_ids, mean = 0, sd = indi_sd)
+  if (exact) indi_soc_vals_ini <- indi_soc_vals_ini <- as.numeric(scale(indi_soc_vals_ini) * indi_sd)
+  indi_soc_vals <- indi_soc_vals_ini
+  if (do_indi_cat_slope) indi_soc_vals <- indi_soc_vals_ini + indi_cat_slope * indi_data$feature_cat
+  indi_data$indi_soc_vals_ini <- indi_soc_vals_ini
+  indi_data$indi_soc_vals <- indi_soc_vals
+
+
   # dyadic sociality
   dyad_soc_vals <- rnorm(n = n_dyads, mean = dyad_intercept, sd = dyad_sd)
 
+  # exact distributions
+  if (exact) {
+    dyad_soc_vals <- as.numeric(scale(dyad_soc_vals) * dyad_sd + dyad_intercept)
+  }
+
 
   # select behavior scale types, currently:
-  #  - count (as in poisson)
-  #  - prop (as in proportion): still technically a count (out of 100 'trials')
-  #  - duration (not yet implemented...)
+  #  - count/frequency (as in poisson)
+  #  - proportion (as in proportion): still technically a count (out of 100 'trials')
+  #  - dur_gamma (continuous duration)
+  #  - dur_beta (continuous proportion)
 
   if (length(behav_types) == 1) {
     if (behav_types == "random") {
@@ -146,14 +215,17 @@ generate_data <- function(n_ids = NULL,
     }
   }
 
+
   if (length(behav_types) > 1) {
     if (length(behav_types) != n_beh) stop("number of behavior types does not match number of behaviors")
     if (any(behav_types == "random")) stop("can't have random behavior type with more than one behavior (need to specify for each behavior individually)")
     btypes <- behav_types
   }
+  behav_types <- btypes
 
   # and prep for output (convert to numeric)
-  behav_types_num <- rep(1, n_beh) # counts (pois as default)
+  # default is count/frequency
+  behav_types_num <- rep(1, n_beh) # counts
   behav_types_num[btypes == "prop"] <- 2
   behav_types_num[btypes == "dur_gamma"] <- 3
   behav_types_num[btypes == "dur_beta"] <- 4
@@ -197,11 +269,6 @@ generate_data <- function(n_ids = NULL,
                                                        mean = 0,
                                                        sd = 1)))
 
-  # exact distributions
-  if (exact) {
-    indi_soc_vals <- as.numeric(scale(indi_soc_vals) * indi_sd + indi_intercept)
-    dyad_soc_vals <- as.numeric(scale(dyad_soc_vals) * dyad_sd + dyad_intercept)
-  }
 
   lp <- indi_intercept + dyad_intercept +
     0.5 * (indi_soc_vals[dyads[, 1]] + indi_soc_vals[dyads[, 2]]) +
@@ -275,6 +342,7 @@ generate_data <- function(n_ids = NULL,
                                     type = behav_types[i],
                                     obseff = obseff[, i])
   }
+  prior_matrix
 
   # dsi
   aux <- interactions / obseff
@@ -334,9 +402,9 @@ generate_data <- function(n_ids = NULL,
                   behav_types = bdata,
                   interactions = apply(interactions, 2, as.integer),
                   interactions_cont = interactions,
-                  n_beh = n_beh,
-                  n_ids = n_ids,
-                  n_dyads = n_dyads,
+                  n_beh = as.integer(n_beh),
+                  n_ids = as.integer(n_ids),
+                  n_dyads = as.integer(n_dyads),
                   dyads_navi = as.matrix(dyads[, 1:2]),
                   obseff = obseff,
                   prior_matrix = prior_matrix,
@@ -349,11 +417,16 @@ generate_data <- function(n_ids = NULL,
                   beh_names = rep(0, n_beh)
                   )
 
+  if (do_indi_cat_slope) {
+    standat$indi_cat_pred <- indi_data$feature_cat
+  }
+
   names(standat$beh_names) <- paste0("behav_", LETTERS[seq_len(n_beh)])
 
   list(standat = standat,
        input_data = list(behav_type = btypes,
                          empty = empty,
+                         indi_data = indi_data,
                          indi_soc_vals = indi_soc_vals,
                          indi_sums = 0.5 * (indi_soc_vals[dyads[, 1]] +
                                               indi_soc_vals[dyads[, 2]]),

@@ -6,11 +6,14 @@
 \usage{
 generate_data(
   n_ids = NULL,
-  n_beh = NULL,
+  n_beh = 1,
   behav_types = "count",
   indi_sd = NULL,
   dyad_sd = NULL,
-  dyadic_covariate_slope = 0,
+  indi_covariate_slope = NULL,
+  indi_cat_slope = NULL,
+  dyadic_covariate_slope = NULL,
+  dyadic_cat_slope = NULL,
   disp_pars_gamma = NULL,
   disp_pars_beta = NULL,
   beh_intercepts = NULL,
@@ -36,9 +39,21 @@ positive. Default is a random value
 positive. Default is a random value
 (\code{runif(1, 0, 4)}).}
 
-\item{dyadic_covariate_slope}{numeric, default is 0. Fits an additional
-covariate (stdnormal) with this slope to contribute to the linear
-predictor.}
+\item{indi_covariate_slope}{numeric, default is \code{NULL}. Fits an
+additional covariate effect on the
+gregariousness vector. (think: age)}
+
+\item{indi_cat_slope}{numeric, default is \code{NULL}. Fits an additional
+categorical effect on the gregariousness vector.
+(think: sex)}
+
+\item{dyadic_covariate_slope}{numeric, default is \code{NULL}. Fits an
+additional covariate effect on the
+affinity vector. (think: relatedness)}
+
+\item{dyadic_cat_slope}{numeric, default is \code{NULL}. Fits an additional
+categorical effect on the affinity vector.
+(think: same-sex?)}
 
 \item{disp_pars_gamma}{numeric of the same length as \code{n_beh}.
 Dispersion parameter(s) for any behavior with

@@ -2,9 +2,14 @@
 % Please edit documentation in R/make_stan_data_from_matrices.R
 \name{make_stan_data_from_matrices}
 \alias{make_stan_data_from_matrices}
-\title{convert interaction matrices into data list ready for stan}
+\title{convert interaction matrices into data list ready for Stan}
 \usage{
-make_stan_data_from_matrices(mats, behav_types = NULL, obseff = NULL)
+make_stan_data_from_matrices(
+  mats,
+  behav_types = NULL,
+  obseff = NULL,
+  indi_cat_pred = NULL
+)
 }
 \arguments{
 \item{mats}{list with (named) square interaction matrices}
@@ -22,6 +27,14 @@ dyadic observation time is already coded for each dyad.
 Can also be a list of such vectors or matrices, which then
 is mapped to each behavior (in that case this list needs to be
 of the same length as \code{mats}).}
+
+\item{indi_cat_pred}{numeric or integer vector with dummy-coded individual-
+level predictor. Must contain one value per individual
+and can only reflect two categories (as 0's and 1's)!
+Examples are sex (female or not female), age (old or
+not old), residence status (resident or migrant).
+Default is \code{NULL} and if so, will be omitted
+in the output object.}
 }
 \value{
 a named list that can be handed over to Stan as \code{data} via
@@ -51,10 +64,12 @@ beta likelihood}
 individuals' codes}
 \item{\code{$beh_names}} {vector of 0's with names corresponding to
 behavior codes}
+\item{\code{$indi_cat_pred}} {vector of 0's and 1's reflecting the
+individual-level categorical predictor}
 }
 }
 \description{
-convert interaction matrices into data list ready for stan
+convert interaction matrices into data list ready for Stan
 }
 \details{
 If supplied via column names in \code{mats[[1]]}, id codes are
@@ -70,6 +85,10 @@ colnames(m1) <- letters[1:8]
 
 matlist <- list(beh1 = m1, beh2 = m2)
 make_stan_data_from_matrices(mats = matlist)
+
+# adding a predictor for individual-level axis
+make_stan_data_from_matrices(mats = matlist,
+                             indi_cat_pred = sample(c(0, 1), 8, TRUE))
 
 o <- rep(0.5, 8)
 o[1:2] <- c(1.5, 10.5)

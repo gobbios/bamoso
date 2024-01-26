@@ -4,11 +4,19 @@
 \alias{make_stan_data_from_association}
 \title{convert group-by-individual association data into data list ready for Stan}
 \usage{
-make_stan_data_from_association(asso_table)
+make_stan_data_from_association(asso_table, indi_cat_pred = NULL)
 }
 \arguments{
 \item{asso_table}{a 0/1 matrix where columns correspond to individuals and
 rows to individual samples}
+
+\item{indi_cat_pred}{numeric or integer vector with dummy-coded individual-
+level predictor. Must contain one value per individual
+and can only reflect two categories (as 0's and 1's)!
+Examples are sex (female or not female), age (old or
+not old), residence status (resident or migrant).
+Default is \code{NULL} and if so, will be omitted
+in the output object.}
 }
 \value{
 a list

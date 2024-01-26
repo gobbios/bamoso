@@ -4,7 +4,10 @@
 \alias{get_model}
 \title{wrapper to provide model executable}
 \usage{
-get_model()
+get_model(type = c("simple", "indi_cat"))
+}
+\arguments{
+\item{type}{character, specify which model}
 }
 \value{
 a cmdstan model object
