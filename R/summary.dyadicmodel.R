@@ -17,6 +17,9 @@ summary.dyadicmodel <- function(object, ...) {
   s <- paste0("Model of dyadic interactions from ", object$standat$n_ids,
               " individuals (", object$standat$n_dyads, " dyads)")
   cat(s, "\n")
+  if ("removed_dyads" %in% names(object$standat)) {
+    cat("(removed", nrow(object$standat$removed_dyads), "dyads with NA values)\n")
+  }
 
   nchains <- length(object$mod_res$metadata()$id)
   sperchain <- object$mod_res$metadata()$iter_sampling

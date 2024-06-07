@@ -14,12 +14,38 @@
 #' * if column and row names are provided: do they align across
 #'   interaction matrices?
 #'
+#' * are there any individuals for which all interaction data values are \code{NA}
 #'
 #' @inheritParams make_stan_data_from_matrices
 #' @importFrom stats na.omit
 #' @return just some textual output
 #' @export
+#' @examples
+#' data("grooming")
+#' mats <- list(grooming$ass$groom[1:5, 1:5])
+#' obseff <- outer(grooming$ass$obseff[1:5], grooming$ass$obseff[1:5], "+")
+#' check_data(mats = mats, obseff = obseff)
 #'
+#' \dontrun{
+#' data("grooming")
+#' mats <- list(grooming$ass$groom[1:5, 1:5])
+#' # set one value to NA
+#' mats[[1]][1, 4] <- NA
+#' obseff <- outer(grooming$ass$obseff[1:5], grooming$ass$obseff[1:5], "+")
+#' check_data(mats = mats, obseff = obseff)
+#' }
+#'
+#' \dontrun{
+#' data("grooming")
+#' mats <- list(grooming$ass$groom[1:5, 1:5])
+#' # set individual to NA
+#' mats[[1]][2, ] <- NA
+#' mats[[1]][, 2] <- NA
+#' obseff <- outer(grooming$ass$obseff[1:5], grooming$ass$obseff[1:5], "+")
+#' check_data(mats = mats, obseff = obseff)
+#' }
+
+
 check_data <- function(mats,
                        behav_types = NULL,
                        obseff = NULL) {
@@ -40,6 +66,19 @@ check_data <- function(mats,
       message("dimension of observation effort data match (good)")
     }
   }
+
+  # check for individuals for which all values are NA
+  aux <- lapply(mats, function(x) {
+    diag(x) <- NA
+    (rowSums(is.na(x)) + colSums(is.na(x))) == ncol(x) * 2
+  })
+  aux <- do.call("rbind", aux)
+  if (any(aux)) {
+    message("found *individuals* in interaction data for which *all* dyadic behavior values are NA.\n",
+            "Those individuals will be removed in make_standata_from_matrices().")
+  }
+
+
 
   # names of individuals in observation effort ------------
   n_obseff <- NULL
@@ -131,14 +170,14 @@ check_data <- function(mats,
   if (any(unlist(lapply(mats, function(x) any(is.na(x)))))) {
     message("found NA values in interaction matrices (not good)")
   }
-  if (any(unlist(lapply(mats, function(x) any(x < 0))))) {
+  if (any(unlist(lapply(mats, function(x) any(x < 0, na.rm = TRUE))))) {
     message("found negative values in interaction matrices (not good)")
   }
   if (!is.null(obseff)) {
     if (any(unlist(lapply(obseff, function(x) any(is.na(x)))))) {
       message("found NA values in observation effort data (not good)")
     }
-    if (any(unlist(lapply(obseff, function(x) any(x < 0))))) {
+    if (any(unlist(lapply(obseff, function(x) any(x < 0, na.rm = TRUE))))) {
       message("found negative values in observation effort data (not good)")
     }
   }

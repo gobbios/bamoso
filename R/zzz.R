@@ -83,3 +83,49 @@
 #' @format a list with named items.
 "sharks"
 
+
+
+#' utility to convert observation effort that is vector-based or NULL to list of matrices
+#'
+#' @param obseff list with vectors of observation effort or \code{NULL}
+#' @param mats list with matrices of dyadic interactions
+#'
+#' @return a list
+#' @examples
+#' obseff <- list(c(a = 2.3, b = 4.3, c = NA, d = 12),
+#'                c(a = 2.3, b = 4.3, c = 222, d = 12))
+#' obseff_to_matrix(obseff = obseff)
+#'
+obseff_to_matrix <- function(obseff, mats = NULL) {
+  if (is.null(obseff)) {
+    res <- lapply(mats, function(x) {
+      x[, ] <- 1
+      diag(x) <- NA
+      x[lower.tri(x)] <- 0
+      x
+    })
+
+    for (i in seq_len(length(res))) {
+      res[[i]][is.na(mats[[i]])] <- NA
+    }
+
+    return(res)
+  }
+
+  if (all(unlist(lapply(obseff, is.vector)))) {
+    (res <- lapply(obseff, function(x)outer(x, x, "+")))
+    res <- lapply(res, function(x) {
+      diag(x) <- NA
+      x[lower.tri(x)] <- 0
+      x
+    })
+    return(res)
+  }
+
+  if (all(unlist(lapply(obseff, is.matrix)))) {
+    return(obseff)
+  }
+
+  stop("can't decide what to do with the supplied observation effort (either provide matrices, or vectors, or keep it at NULL", call. = FALSE)
+
+}

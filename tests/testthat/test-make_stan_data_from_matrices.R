@@ -12,12 +12,45 @@ x$input_data$behav_type
 bmats <- list(b1 = x$processed$interaction_matrices[[1]],
               b2 = x$processed$interaction_matrices[[2]])
 
+
+
 standat <- make_stan_data_from_matrices(mats = bmats,
                                         behav_types = x$input_data$behav_type)
 
 test_that("make_stan_data_from_matrices does not produce NA values", {
   expect_true(all(unlist(lapply(standat, function(x) !any(is.na(x))))))
 })
+
+
+test_that("make_stan_data_from_matrices removes NA dyads appropriately", {
+  m <- x$processed$interaction_matrices[[1]]
+  standat <- make_stan_data_from_matrices(mats = list(m))
+  nd <- standat$n_dyads
+  rem <- sample(ncol(m), 3)
+
+  m[rem[1], rem[2]] <- NA
+  m[rem[2], rem[1]] <- NA
+  standat <- make_stan_data_from_matrices(mats = list(m))
+  expect_true(standat$n_dyads == nd - 1)
+  expect_true(nrow(standat$dyads_navi) == nd - 1)
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$interactions))
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$interactions_cont))
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$obseff))
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$obseff_int))
+
+  m[rem[1], rem[3]] <- NA
+  m[rem[3], rem[1]] <- NA
+  standat <- make_stan_data_from_matrices(mats = list(m))
+  expect_true(standat$n_dyads == nd - 2)
+  expect_true(nrow(standat$dyads_navi) == nd - 2)
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$interactions))
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$interactions_cont))
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$obseff))
+  expect_true(nrow(standat$dyads_navi) == nrow(standat$obseff_int))
+
+})
+
+
 
 test_that("make_stan_data_from_matrices contains the correct list elements", {
   expect_true("id1" %in% names(standat))

@@ -25,6 +25,7 @@
 #'          present in the output as names of vector of zeros.
 #'
 #'
+#'
 #' @importFrom cmdstanr cmdstan_model
 #' @return a named list that can be handed over to Stan as \code{data} via
 #'         \code{\link{sociality_model}}:
@@ -76,17 +77,62 @@
 #' o <- rep(0.5, 8)
 #' o[1:2] <- c(1.5, 10.5)
 #' make_stan_data_from_matrices(mats = matlist, obseff = o)$obseff
+#'
+#' # dealing with dyads that were not coresident (NA values)
+#' m1 <- matrix(rpois(64, 1), ncol = 8)
+#' diag(m1) <- 0
+#' m1[2, 5] <- NA
+#' m1[5, 2] <- NA
+#' res <- make_stan_data_from_matrices(list(m1))
+#' res$n_dyads # should be 28 if all dyads were coresident, but is 27 (removing dyad [2,5])
+#'
 
 make_stan_data_from_matrices <- function(mats,
                                          behav_types = NULL,
                                          obseff = NULL,
                                          indi_cat_pred = NULL
                                          ) {
+  # convert obseff to list of matrices
+  # if NULL: convert to matrices filled with 1's in upper triangle
+  # if vectors: sum individual values and put them in upper triangle
+  obseff <- obseff_to_matrix(obseff = obseff, mats = mats)
+
+  # set diagonals of matrices to NA
+  mats <- lapply(mats, function(x) {
+    diag(x) <- NA
+    x
+  })
+  obseff <- lapply(obseff, function(x) {
+    diag(x) <- NA
+    x
+  })
+
+
+  # check whether matrices are identical with respect to NA values
+  testobj <- c(mats, obseff)
+  test1 <- unique(lapply(testobj, is.na))
+  if (length(test1) != 1) {
+    if (is.null(obseff)) stop("behavior matrices differ with respect to NA values (or column and row names)", call. = FALSE)
+    if (!is.null(obseff)) stop("behavior and observation effort matrices differ with respect to NA values (or column and row names)", call. = FALSE)
+  }
+
+  # at this point we have matrices that are identical with respect to row and column names and where there are NA values
+
+  # need to remove any ids for which *all* dyadic values are NA
+  # but keep individuals for which only a subset of dyadic values is NA
+  aux <- which((rowSums(is.na(mats[[1]])) + colSums(is.na(mats[[1]]))) != ncol(mats[[1]]) * 2)
+  for (i in seq_len(length(mats))) {
+    mats[[i]] <- mats[[i]][aux, aux]
+    obseff[[i]] <- obseff[[i]][aux, aux]
+  }
+
+
   n_ids <- ncol(mats[[1]])
   n_dyads <- n_ids * (n_ids - 1) * 0.5
   n_beh <- length(mats)
 
   if (!is.null(indi_cat_pred)) {
+    indi_cat_pred <- na.omit(indi_cat_pred)
     if (length(indi_cat_pred) != n_ids) {
       stop("individual-level predictor doesn't have correct length", call. = FALSE)
     }
@@ -133,20 +179,30 @@ make_stan_data_from_matrices <- function(mats,
   beta_shape_pos_mod[beta_shape_pos > 0] <- seq_len(sum(beta_shape_pos > 0))
 
 
-  interactions <- matrix(ncol = length(mats), nrow = n_dyads)
-  obseff_dat <- matrix(ncol = length(mats), nrow = n_dyads)
+  interactions <- matrix(ncol = length(mats), nrow = n_dyads, NA)
+  obseff_dat <- matrix(ncol = length(mats), nrow = n_dyads, NA)
   index <- which(upper.tri(mats[[1]]), arr.ind = TRUE)
-  if (is.null(obseff)) {
-    sdata <- rep(0.5, n_ids)
-  } else {
-    sdata <- obseff
-  }
+  na_dyads <- which(apply(index, 1, function(x) is.na(mats[[1]][x[1], x[2]])))
+  # if (is.null(obseff)) {
+  #   sdata <- rep(0.5, n_ids)
+  # } else {
+  #   sdata <- obseff
+  # }
+  sdata <- obseff
 
   for (i in seq_along(mats)) {
     for (k in seq_len(n_dyads)) {
-      interactions[k, i] <- mats[[i]][index[k, 1], index[k, 2]]
-      interactions[k, i] <- interactions[k, i] + mats[[i]][index[k, 2],
-                                                           index[k, 1]]
+      val1 <- mats[[i]][index[k, 1], index[k, 2]]
+      val2 <- mats[[i]][index[k, 2], index[k, 1]]
+      # old way
+      # interactions[k, i] <- val1
+      # interactions[k, i] <- interactions[k, i] + val2
+      # new way
+      # if both vals are NA: the dyad is NA
+      if (is.na(val1) && is.na(val2)) next
+      # val <- sum(val1, val2, na.rm = TRUE) # ignore NA if they only appear in one matrix triangle
+      val <- sum(val1, val2) # ignore NA if they only appear in one matrix triangle
+      interactions[k, i] <- val
     }
   }
 
@@ -175,6 +231,7 @@ make_stan_data_from_matrices <- function(mats,
     for (i in seq_along(mats)) {
       if (is.vector(sdata[[i]])) {
         for (k in seq_len(n_dyads)) {
+          # old way
           obseff_dat[k, i] <- sdata[[i]][index[k, 1]] + sdata[[i]][index[k, 2]]
         }
       }
@@ -185,22 +242,35 @@ make_stan_data_from_matrices <- function(mats,
   }
 
   # set obseff for props to 100 if not supplied...
-  if (is.null(obseff)) {
+  # if (is.null(obseff)) {
     for (i in seq_along(mats)) {
-      if (behav_types[i] == "prop") {
+      if (behav_types[i] == "prop" & all(obseff_dat[, i] == 1 ,na.rm = TRUE)) {
         obseff_dat[, i] <- 100
       }
     }
-  }
+  # }
+
+  # set
+
+
+
+
+  # filter for non-NA dyads
+  # do it at the beginning of the function
+  # this an index for those *dyads* that have non-NA values
+  sel <- which(!is.na(interactions[, 1]))
+  # and dyads which were removed
+  removed_dyads <- index[is.na(interactions[, 1]), , drop = FALSE]
+
 
   # create default priors for behaviors
   # at this point 'interactions' is not yet split into discrete vs continuous
   prior_matrix <- matrix(ncol = 2, nrow = length(mats))
   for (i in seq_along(mats)) {
-    response <- interactions[, i]
+    response <- interactions[sel, i]
     prior_matrix[i, ] <- make_prior(response = response,
                                     type = behav_types[i],
-                                    obseff = obseff_dat[, i])
+                                    obseff = obseff_dat[sel, i])
   }
 
   if (!is.null(colnames(mats[[1]]))) {
@@ -223,24 +293,26 @@ make_stan_data_from_matrices <- function(mats,
   bdata <- c(behav_types_num, 0)
   names(bdata) <- c(behav_types, "0")
 
-  out <- list(id1 = index[, 1],
-              id2 = index[, 2],
+  out <- list(id1 = index[sel, 1],
+              id2 = index[sel, 2],
               behav_types = bdata,
-              interactions = apply(interactions, 2, as.integer),
-              interactions_cont = apply(interactions, 2, as.numeric),
+              interactions = apply(interactions[sel, , drop = FALSE], 2, as.integer),
+              interactions_cont = apply(interactions[sel, , drop = FALSE], 2, as.numeric),
               n_beh = length(mats),
               n_ids = n_ids,
-              n_dyads = as.integer(n_dyads),
-              dyads_navi = as.matrix(index[, 1:2]),
-              obseff = obseff_dat,
-              obseff_int = apply(obseff_dat, 2, as.integer),
+              # n_dyads = as.integer(n_dyads),
+              n_dyads = length(sel),
+              dyads_navi = as.matrix(index[sel, 1:2]),
+              obseff = obseff_dat[sel, , drop = FALSE],
+              obseff_int = apply(obseff_dat[sel, , drop = FALSE], 2, as.integer),
               gamma_shape_pos = gamma_shape_pos_mod,
               gamma_shape_n = sum(gamma_shape_pos > 0),
               beta_shape_pos = beta_shape_pos_mod,
               beta_shape_n = sum(beta_shape_pos > 0),
               prior_matrix = prior_matrix,
               id_codes = vec,
-              beh_names = vec_behaviors)
+              beh_names = vec_behaviors,
+              removed_dyads = removed_dyads)
 
   if (!is.null(indi_cat_pred)) {
     out$indi_cat_pred <- indi_cat_pred

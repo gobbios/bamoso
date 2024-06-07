@@ -202,12 +202,12 @@ Recall that these intercepts represent the expected interactions for an average 
 
 ```{r}
 set.seed(1)
-d <- generate_data(n_ids = 15, n_beh = 2,
+d <- generate_data(n_ids = 14, n_beh = 2,
                    behav_types = c("count", "prop"),
                    indi_sd = 1.5, dyad_sd = 1.5,
-                   beh_intercepts = c(-3, -3),
+                   beh_intercepts = c(-0.9, -1.2),
                    prop_trials = c(5, 100),
-                   count_obseff = c(5, 100))
+                   count_obseff = c(5, 50))
 ```
 
 The output of `generate_data()` is already pre-processed to simplify the quantitative evaluations presented in the manuscript.
@@ -217,8 +217,8 @@ We also label the individuals with letters, which is helpful down the line to ke
 ```{r}
 m1 <- d$processed$interaction_matrices[[1]]
 m2 <- d$processed$interaction_matrices[[2]]
-colnames(m1) <- rownames(m1) <- LETTERS[1:15]
-colnames(m2) <- rownames(m2) <- LETTERS[1:15]
+colnames(m1) <- rownames(m1) <- LETTERS[1:14]
+colnames(m2) <- rownames(m2) <- LETTERS[1:14]
 
 o1 <- m1 - m1
 o1[d$standat$dyads_navi] <- d$input_data$obseff[, 1]
@@ -299,23 +299,23 @@ Additional arguments pertain to setting parameters for `cmdstanr`'s `$sample()` 
 In this example, I actually already used one such argument, `seed=3`, which should result in a warning message about divergent transitions.\footnote{The seed argument just fixes the generation of random numbers to a replicable state. In this particular example I chose it such that we actually do get divergent transitions, but it doesn't \textit{cause} the divergent transitions. Try it out with different values and you will see that sometimes divergent transitions occur and sometimes they don't.}
 
 ```{r fit_example_1_1_display, eval = FALSE, echo=FALSE}
-fit1 <- sociality_model(standat = sdat1, refresh = 0, parallel_chains = 4, seed = 1)
+fit1 <- sociality_model(standat = sdat1, refresh = 0, parallel_chains = 4, seed = 1912)
 ```
 
-```{r fit_example_1_1, cache=TRUE, eval = FALSE}
-fit1 <- sociality_model(standat = sdat1, seed = 3)
+```{r fit_example_1_1, eval = FALSE}
+fit1 <- sociality_model(standat = sdat1, seed = 7509)
 ```
 
 Divergent transitions occur quite regularly, but usually can be resolved by setting a higher value to `adapt_delta`.
 So let's do this, and in the process also change a few more settings, just to illustrate how this works.
 
 ```{r fit_example_1_2, cache=TRUE, include=FALSE}
-fit1 <- sociality_model(standat = sdat1, seed = 3, adapt_delta = 0.9,
+fit1 <- sociality_model(standat = sdat1, seed = 7509, adapt_delta = 0.9,
                         parallel_chains = 4, iter_warmup = 1200)
 ```
 
 ```{r fit_example_1_2_display, cache=FALSE, eval = FALSE}
-fit1 <- sociality_model(standat = sdat1, seed = 3, adapt_delta = 0.9,
+fit1 <- sociality_model(standat = sdat1, seed = 7509, adapt_delta = 0.9,
                         parallel_chains = 4, iter_warmup = 1200)
 ```
 
@@ -328,7 +328,7 @@ The resulting object is a list with two items, which combines the Stan data used
 If you are familiar with `cmdstanr` models, you can directly access the model environment via
 
 ```{r, eval=FALSE}
-res$mod_res
+fit1$mod_res
 ```
 
 and take it from there.
@@ -352,7 +352,7 @@ Actually, I set the bins as a sequence from $-0.5$ to $119.5$ in steps of $10$ (
 
 ```{r, echo=2:10, fig.width=5, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp01}Posterior predictive checks for the entire group."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
-bins <- seq(-0.5, 119.5, by = 10)
+bins <- seq(-0.5, 699.5, by = 10)
 pp_model(mod_res = fit1, xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
 axis(2, las = 1, cex.axis = 0.8)
 ```

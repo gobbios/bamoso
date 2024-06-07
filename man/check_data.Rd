@@ -38,5 +38,31 @@ checks for now.
 effort data?
 \item if column and row names are provided: do they align across
 interaction matrices?
+\item are there any individuals for which all interaction data values are \code{NA}
+}
+}
+\examples{
+data("grooming")
+mats <- list(grooming$ass$groom[1:5, 1:5])
+obseff <- outer(grooming$ass$obseff[1:5], grooming$ass$obseff[1:5], "+")
+check_data(mats = mats, obseff = obseff)
+
+\dontrun{
+data("grooming")
+mats <- list(grooming$ass$groom[1:5, 1:5])
+# set one value to NA
+mats[[1]][1, 4] <- NA
+obseff <- outer(grooming$ass$obseff[1:5], grooming$ass$obseff[1:5], "+")
+check_data(mats = mats, obseff = obseff)
+}
+
+\dontrun{
+data("grooming")
+mats <- list(grooming$ass$groom[1:5, 1:5])
+# set individual to NA
+mats[[1]][2, ] <- NA
+mats[[1]][, 2] <- NA
+obseff <- outer(grooming$ass$obseff[1:5], grooming$ass$obseff[1:5], "+")
+check_data(mats = mats, obseff = obseff)
 }
 }

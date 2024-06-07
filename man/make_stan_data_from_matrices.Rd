@@ -93,4 +93,13 @@ make_stan_data_from_matrices(mats = matlist,
 o <- rep(0.5, 8)
 o[1:2] <- c(1.5, 10.5)
 make_stan_data_from_matrices(mats = matlist, obseff = o)$obseff
+
+# dealing with dyads that were not coresident (NA values)
+m1 <- matrix(rpois(64, 1), ncol = 8)
+diag(m1) <- 0
+m1[2, 5] <- NA
+m1[5, 2] <- NA
+res <- make_stan_data_from_matrices(list(m1))
+res$n_dyads # should be 28 if all dyads were coresident, but is 27 (removing dyad [2,5])
+
 }
