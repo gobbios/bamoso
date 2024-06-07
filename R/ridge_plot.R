@@ -99,11 +99,6 @@ ridge_plot <- function(mod_res,
     # order according to posterior median
     xorder <- as.numeric(apply(alldraws, 2, median))
     names(xorder) <- standat$id_codes
-    # for (i in seq_len(n)) {
-    #   p <- as.numeric(mod_res$draws(paste0("indi_soc_vals[", i, "]"),
-    #                                 format = "draws_matrix"))
-    #   xorder[i] <- median(p)
-    # }
 
     # actual plotting
     plot(0, 0, xlim = xlim, ylim = c(0.5, n * yaxs_exp), type = "n",
@@ -142,14 +137,10 @@ ridge_plot <- function(mod_res,
 
     # order according to posterior median
     xorder <- as.numeric(apply(alldraws, 2, median))
-    nm <- combn(names(standat$id_codes), 2)
-    nm <- paste0(nm[1, ], "_@_", nm[2, ])
+    # nm <- combn(names(standat$id_codes), 2)
+    # nm <- paste0(nm[1, ], "_@_", nm[2, ])
+    nm <- apply(standat$dyads_navi, 1, function(x) paste(names(standat$id_codes)[x], collapse = "_@_"))
     names(xorder) <- nm
-    # for (i in seq_len(n)) {
-    #   p <- as.numeric(mod_res$draws(paste0("dyad_soc_vals[", i, "]"),
-    #                                 format = "draws_matrix"))
-    #   xorder[i] <- median(p)
-    # }
 
     # actual plotting
     plot(0, 0, xlim = xlim, ylim = c(0.5, n * yaxs_exp), type = "n",
@@ -160,8 +151,6 @@ ridge_plot <- function(mod_res,
     for (i in order(xorder)) {
       cnt <- cnt + 1
       p <- alldraws[, paste0("dyad_soc_vals[", i, "]")]
-      # p <- as.numeric(mod_res$draws(paste0("dyad_soc_vals[", i, "]"),
-      #                               format = "draws_matrix"))
       p <- density(p, adjust = dens_adjust)
       px <- p$x
       py <- p$y
