@@ -76,7 +76,7 @@ ridge_plot <- function(mod_res,
     # sel_subset <- c("B", "C_@_D")
     if (!is.null(sel_subset)) {
       if (is.character(sel_subset) || is.factor(sel_subset)) {
-        nm_mat <- combn(names(standat$id_codes), 2)
+        nm_mat <- apply(standat$dyads_navi, 1, function(x) names(standat$id_codes)[x])
         nm <- paste0(nm_mat[1, ], "_@_", nm_mat[2, ])
 
         sel1 <- which(apply(t(nm_mat), 1, function(x)any(sel_subset %in% x)))
