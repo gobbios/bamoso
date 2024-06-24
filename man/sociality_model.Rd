@@ -38,10 +38,28 @@ res <- sociality_model(standat = standat, parallel_chains = 4,
 summary(res)
 }
 
+
 \dontrun{
 x <- generate_data(n_ids = 16, n_beh = 1, indi_sd = 1,
                    dyad_sd = 1, beh_intercepts = 1)
 standat <- x$standat
 res <- sociality_model(standat = standat, parallel_chains = 4)
+}
+
+\dontrun{
+# with correlated axes
+m1 <- matrix(c(0.3, -0.5, -0.5, 0.5), ncol = 2)
+m2 <- matrix(c(0.5, 0.5, 0.5, 0.5), ncol = 2)
+x <- generate_data(n_ids = 17, n_beh = 2,
+                   behav_types = c("count", "prop"),
+                   indi_sd = m1,
+                   dyad_sd = m2,
+                   beh_intercepts = c(1.4, -0.7), exact = TRUE)
+
+standat <- x$standat
+standat$n_cors
+res <- sociality_model(standat = standat, parallel_chains = 4)
+res$mod_res$summary("cors_indi")
+res$mod_res$summary("cors_dyad")
 }
 }

@@ -94,9 +94,19 @@
 #' @examples
 #' obseff <- list(c(a = 2.3, b = 4.3, c = NA, d = 12),
 #'                c(a = 2.3, b = 4.3, c = 222, d = 12))
-#' obseff_to_matrix(obseff = obseff)
+#' bamoso:::obseff_to_matrix(obseff = obseff)
 #'
 obseff_to_matrix <- function(obseff, mats = NULL) {
+  if (length(mats) > 1 & (is.vector(obseff, mode = "numeric") || is.vector(obseff, mode = "integer"))) {
+    aux <- outer(obseff, obseff, "+")
+    res <- list()
+    for (i in seq_along(mats)) {
+      res[[length(res) + 1]] <- aux
+    }
+    return(res)
+  }
+
+
   if (is.null(obseff)) {
     res <- lapply(mats, function(x) {
       x[, ] <- 1
@@ -128,4 +138,64 @@ obseff_to_matrix <- function(obseff, mats = NULL) {
 
   stop("can't decide what to do with the supplied observation effort (either provide matrices, or vectors, or keep it at NULL", call. = FALSE)
 
+}
+
+
+
+
+#' generate multivariate normally distributed numbers
+#'
+#' (based on MASS::mvrorm and lme4::sdcor2cov)
+#'
+#' @param n number of samples to generate
+#' @param mu vector with means
+#' @param Sigma square matrix with SDs on diagonal and cors on off-diagonal
+#' @param empirical,tol see help of \code{MASS::mvrnorm()} (\code{?MASS::mvrnorm})
+#'
+#' @source Code is reused from \code{MASS} and \code{lme4} packages.
+#'
+#' @details
+#' \code{Sigma} is a SD/correlation matrix (unlike mvrnorm, which uses variance/covariance)
+#'
+#'
+#' @return a matrix
+#' @examples
+#' smat <- matrix(c(1.3, -0.2, -0.2, 0.5), ncol = 2)
+#' res <- bamoso:::rnorm_multi(n = 20, mu = c(-0.5, 1.7), Sigma = smat)
+#' apply(res, 2, mean)
+#' apply(res, 2, sd)
+#' cor(res)
+#'
+#' # univariate with SD=0.6:
+#' res <- bamoso:::rnorm_multi(n = 20, mu = c(-0.5), Sigma = matrix(0.6))
+#' apply(res, 2, mean)
+#' apply(res, 2, sd)
+#' cor(res)
+
+rnorm_multi <- function(n, mu = 0, Sigma = matrix(1), empirical = TRUE, tol = 1e-06) {
+
+  # lme4::sdcor2cov
+  xsd <- diag(Sigma)
+  diag(Sigma) <- 1
+  Sigma <- Sigma * outer(xsd, xsd)
+
+  # MASS::mvrnorm
+  p <- length(mu)
+  if (!all(dim(Sigma) == c(p, p))) {
+    stop("incompatible arguments")
+  }
+  eS <- eigen(Sigma, symmetric = TRUE)
+  ev <- eS$values
+  if (!all(ev >= -tol * abs(ev[1L]))) {
+    stop("'Sigma' is not positive definite")
+  }
+
+  X <- matrix(rnorm(p * n), n)
+  if (empirical) {
+    X <- scale(X, TRUE, FALSE)
+    X <- X %*% svd(X, nu = 0)$v
+    X <- scale(X, FALSE, TRUE)
+  }
+  X <- drop(mu) + eS$vectors %*% diag(sqrt(pmax(ev, 0)), p) %*% t(X)
+  t(X)
 }

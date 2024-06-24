@@ -1,7 +1,7 @@
 Package: bamoso
 Title: Bayesian modelling of animal social interactions
-Version: 0.2.2
-Date: 2024-06-07
+Version: 0.2.3
+Date: 2024-06-24
 Authors@R: 
     person(given = "Christof",
            family = "Neumann",
@@ -11,7 +11,7 @@ Description: Bayesian modelling of animal social interactions.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Depends:
   cmdstanr,
   R (>= 4.0)

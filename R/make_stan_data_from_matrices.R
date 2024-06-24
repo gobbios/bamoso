@@ -20,6 +20,10 @@
 #'                      not old), residence status (resident or migrant).
 #'                      Default is \code{NULL} and if so, will be omitted
 #'                      in the output object.
+#' @param correlations logical, default is \code{FALSE}. Flags whether
+#'                     subsequent model should estimate correlations between
+#'                     individuals and dyadic axes. This only makes sense if
+#'                     there are at least two sampled behaviors.
 #'
 #' @details If supplied via column names in \code{mats[[1]]}, id codes are
 #'          present in the output as names of vector of zeros.
@@ -30,32 +34,32 @@
 #' @return a named list that can be handed over to Stan as \code{data} via
 #'         \code{\link{sociality_model}}:
 #'  \itemize{
-#'     \item{\code{$id1}} {integer index of individual 1}
-#'     \item{\code{$id2}} {integer index of individual 2}
-#'     \item{\code{$interactions}} {matrix of interactions (integer)}
-#'     \item{\code{$interactions_cont}} {matrix of interactions (continuous)}
-#'     \item{\code{$n_beh}} {integer number of behaviors}
-#'     \item{\code{$n_ids}} {integer number of individuals}
-#'     \item{\code{$n_dyads}} {integer number of dyads}
-#'     \item{\code{$dyads_navi}} {integer index dyads}
-#'     \item{\code{$obseff}} {matrix with continuous observation effort}
-#'     \item{\code{$obseff_int}} {matrix with integer observation effort}
-#'     \item{\code{$gamma_shape_n}} {number of response vectors with gamma
-#'                                       likelihood}
-#'     \item{\code{$gamma_shape_pos}} {integer index for responses with gamma
-#'                                         likelihood}
-#'     \item{\code{$beta_shape_n}} {number of response vectors with beta
-#'                                      likelihood}
-#'     \item{\code{$beta_shape_pos}} {integer index for responses with
-#'                                        beta likelihood}
-#'     \item{\code{$prior_matrix}} {matrix with priors for intercepts}
-#'     \item{\code{$generate_predictions}} {currently unused}
-#'     \item{\code{$id_codes}} {vector of 0's with names corresponding to
-#'                                  individuals' codes}
-#'     \item{\code{$beh_names}} {vector of 0's with names corresponding to
-#'                                   behavior codes}
-#'     \item{\code{$indi_cat_pred}} {vector of 0's and 1's reflecting the
-#'                                   individual-level categorical predictor}
+#'     \item \code{$id1} integer index of individual 1
+#'     \item \code{$id2} integer index of individual 2
+#'     \item \code{$interactions} matrix of interactions (integer)
+#'     \item \code{$interactions_cont} matrix of interactions (continuous)
+#'     \item \code{$n_beh} integer number of behaviors
+#'     \item \code{$n_ids} integer number of individuals
+#'     \item \code{$n_dyads} integer number of dyads
+#'     \item \code{$dyads_navi} integer index dyads
+#'     \item \code{$obseff} matrix with continuous observation effort
+#'     \item \code{$obseff_int} matrix with integer observation effort
+#'     \item \code{$gamma_shape_n} number of response vectors with gamma
+#'                                       likelihood
+#'     \item \code{$gamma_shape_pos} integer index for responses with gamma
+#'                                         likelihood
+#'     \item \code{$beta_shape_n} number of response vectors with beta
+#'                                      likelihood
+#'     \item \code{$beta_shape_pos} integer index for responses with
+#'                                        beta likelihood
+#'     \item \code{$prior_matrix} matrix with priors for intercepts
+#'     \item \code{$generate_predictions} currently unused
+#'     \item \code{$id_codes} vector of 0's with names corresponding to
+#'                                  individuals' codes
+#'     \item \code{$beh_names} vector of 0's with names corresponding to
+#'                                   behavior codes
+#'     \item \code{$indi_cat_pred} vector of 0's and 1's reflecting the
+#'                                   individual-level categorical predictor
 #'  }
 #' @export
 #'
@@ -65,7 +69,8 @@
 #' diag(m1) <- 0
 #' m2 <- matrix(rpois(64, 5), ncol = 8)
 #' diag(m2) <- 0
-#' colnames(m1) <- letters[1:8]
+#' colnames(m1) <- colnames(m2) <- letters[1:8]
+#' rownames(m1) <- rownames(m2) <- letters[1:8]
 #'
 #' matlist <- list(beh1 = m1, beh2 = m2)
 #' make_stan_data_from_matrices(mats = matlist)
@@ -75,6 +80,7 @@
 #'                              indi_cat_pred = sample(c(0, 1), 8, TRUE))
 #'
 #' o <- rep(0.5, 8)
+#' names(o) <- letters[1:8]
 #' o[1:2] <- c(1.5, 10.5)
 #' make_stan_data_from_matrices(mats = matlist, obseff = o)$obseff
 #'
@@ -90,7 +96,8 @@
 make_stan_data_from_matrices <- function(mats,
                                          behav_types = NULL,
                                          obseff = NULL,
-                                         indi_cat_pred = NULL
+                                         indi_cat_pred = NULL,
+                                         correlations = FALSE
                                          ) {
   # convert obseff to list of matrices
   # if NULL: convert to matrices filled with 1's in upper triangle
@@ -312,10 +319,17 @@ make_stan_data_from_matrices <- function(mats,
               prior_matrix = prior_matrix,
               id_codes = vec,
               beh_names = vec_behaviors,
-              removed_dyads = removed_dyads)
+              removed_dyads = removed_dyads,
+              n_cors = 0)
 
   if (!is.null(indi_cat_pred)) {
     out$indi_cat_pred <- indi_cat_pred
   }
+
+  if (correlations) {
+    out$n_cors <- out$n_beh * (out$n_beh - 1) * 0.5
+  }
+
+
   out
 }

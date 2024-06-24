@@ -4,7 +4,7 @@
 \alias{get_model}
 \title{wrapper to provide model executable}
 \usage{
-get_model(type = c("simple", "indi_cat"))
+get_model(type = c("simple", "indi_cat", "cor_mod"))
 }
 \arguments{
 \item{type}{character, specify which model}
@@ -14,4 +14,13 @@ a cmdstan model object
 }
 \description{
 wrapper to provide model executable
+}
+\details{
+\code{type} can be one of
+
+\itemize{
+\item \code{"simple"}: the basic model
+\item \code{"indi_cat"}: the model with an individual-level categorical predictor
+\item \code{"cor_mod"}: the model fitting separate axes and also the correlations among them
+}
 }

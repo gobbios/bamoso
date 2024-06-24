@@ -24,7 +24,6 @@ for (i in 1:100) {
     has_inf$gamma[i] <- is.infinite(aux[3])
     has_inf$beta[i] <- is.infinite(aux[4])
   }
-
 }
 
 has_inf <- na.omit(has_inf)
@@ -35,4 +34,18 @@ test_that("no infinite values for priors", {
   expect_true(all(!has_inf$gamma))
   expect_true(all(!has_inf$beta))
 })
+
+
+# error is thrown if dimensions of intercepts and SDs and correlations don't match
+test_that("dimension mismatches are detected", {
+  expect_error(generate_data(n_beh = 2, dyad_sd = 2, indi_sd = 1, beh_intercepts = c(3)))
+  m1 <- matrix(c(0.3, -0.5, -0.5, 0.5), ncol = 2)
+  m2 <- matrix(c(0.5, 0.5, 0.5, 0.5), ncol = 2)
+  expect_error(generate_data(n_beh = 3, dyad_sd = m1, indi_sd = m2, beh_intercepts = c(3, 0)))
+  expect_error(generate_data(n_beh = 2, dyad_sd = 1, indi_sd = m2, beh_intercepts = c(3, 0)))
+  expect_error(generate_data(n_beh = 1, dyad_sd = m1, indi_sd = m2, beh_intercepts = c(3, 0)))
+
+})
+
+
 

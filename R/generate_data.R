@@ -102,16 +102,16 @@
 
 # n_ids = 10
 # n_beh = 2
-# behav_types = "count"
-# indi_sd = NULL
-# dyad_sd = NULL
+# behav_types = c("count", "dur_gamma")
+# indi_sd = 1.2
+# dyad_sd = 0.8
 # indi_covariate_slope = NULL
 # indi_cat_slope = NULL
 # dyadic_covariate_slope = NULL
 # dyadic_cat_slope = NULL
-# disp_pars_gamma = NULL
+# disp_pars_gamma = c(0, 0.6)
 # disp_pars_beta = NULL
-# beh_intercepts = NULL
+# beh_intercepts = c(1.4, -0.7)
 # prop_trials = 100
 # count_obseff = 1
 # exact = TRUE
@@ -172,6 +172,23 @@ generate_data <- function(n_ids = NULL,
   n_dyads <- n_ids * (n_ids - 1) / 2
   dyads <- t(combn(seq_len(n_ids), 2))
 
+  # some checks
+  # dealing with correlated sociality scales
+  mulength <- 1
+  if (length(indi_sd) != 1 & length(dyad_sd) != 1) {
+    if (length(indi_sd) != length(dyad_sd)) stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
+    mulength <- ncol(indi_sd)
+  }
+  # index for columns in BLUP matrices
+  colindex <- rep(1, n_beh)
+  if (mulength > 1) {
+    colindex <- seq_len(mulength)
+  }
+  if (n_beh != length(beh_intercepts)) {
+    stop("require one intercept for each behavior (there is a mismatch between n_beh and length(beh_intercepts)", call. = FALSE)
+  }
+  if (length(indi_sd) != length(dyad_sd)) stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
+
 
   # create sociality values (individual-level and dyad-level)
 
@@ -184,8 +201,10 @@ generate_data <- function(n_ids = NULL,
   sel <- sample(seq_len(n_ids), 4)
   indi_data$feature_cat[sel] <- c(1, 1, 0, 0)
 
-  indi_soc_vals_ini <- rnorm(n_ids, mean = 0, sd = indi_sd)
-  if (exact) indi_soc_vals_ini <- indi_soc_vals_ini <- as.numeric(scale(indi_soc_vals_ini) * indi_sd)
+  # indi_soc_vals_ini <- rnorm(n_ids, mean = 0, sd = indi_sd)
+  # if (exact) indi_soc_vals_ini <- indi_soc_vals_ini <- as.numeric(scale(indi_soc_vals_ini) * indi_sd)
+  indi_soc_vals_ini <- rnorm_multi(n = n_ids, mu = rep(0, mulength), Sigma = matrix(indi_sd, ncol = mulength), empirical = exact)
+
   indi_soc_vals <- indi_soc_vals_ini
   if (do_indi_cat_slope) indi_soc_vals <- indi_soc_vals_ini + indi_cat_slope * indi_data$feature_cat
   indi_data$indi_soc_vals_ini <- indi_soc_vals_ini
@@ -193,12 +212,13 @@ generate_data <- function(n_ids = NULL,
 
 
   # dyadic sociality
-  dyad_soc_vals <- rnorm(n = n_dyads, mean = dyad_intercept, sd = dyad_sd)
-
-  # exact distributions
-  if (exact) {
-    dyad_soc_vals <- as.numeric(scale(dyad_soc_vals) * dyad_sd + dyad_intercept)
-  }
+  # dyad_soc_vals <- rnorm(n = n_dyads, mean = dyad_intercept, sd = dyad_sd)
+  #
+  # # exact distributions
+  # if (exact) {
+  #   dyad_soc_vals <- as.numeric(scale(dyad_soc_vals) * dyad_sd + dyad_intercept)
+  # }
+  dyad_soc_vals <- rnorm_multi(n = n_dyads, mu = rep(0, mulength), Sigma = matrix(dyad_sd, ncol = mulength), empirical = exact)
 
 
   # select behavior scale types, currently:
@@ -269,14 +289,19 @@ generate_data <- function(n_ids = NULL,
                                                        mean = 0,
                                                        sd = 1)))
 
-
-  lp <- indi_intercept + dyad_intercept +
-    0.5 * (indi_soc_vals[dyads[, 1]] + indi_soc_vals[dyads[, 2]]) +
-    dyad_soc_vals +
-    dyadic_covariate_slope * dyadic_covariate_predictor
+  # lp <- indi_intercept + dyad_intercept +
+  #   0.5 * (indi_soc_vals[dyads[, 1]] + indi_soc_vals[dyads[, 2]]) +
+  #   dyad_soc_vals +
+  #   dyadic_covariate_slope * dyadic_covariate_predictor
 
   interactions <- matrix(ncol = n_beh, nrow = n_dyads)
   for (i in seq_len(n_beh)) {
+    lp <- indi_intercept + dyad_intercept +
+      0.5 * (indi_soc_vals[dyads[, 1], colindex[i]] + indi_soc_vals[dyads[, 2], colindex[i]]) +
+      dyad_soc_vals[, colindex[i]] +
+      dyadic_covariate_slope * dyadic_covariate_predictor
+
+
     lp_b <- lp + beh_intercepts[i]
     if (btypes[i] == "count") {
       interactions[, i] <- rpois(n = n_dyads,
@@ -356,14 +381,18 @@ generate_data <- function(n_ids = NULL,
     sum_top3[i] <- sum(sort(x, decreasing = TRUE)[1:3])
   }
 
-  # interaction matrices
+  # interaction and effort matrices
   imats <- vector("list", n_beh)
+  omats <- vector("list", n_beh)
   for (i in seq_len(n_beh)) {
     m <- matrix(ncol = n_ids, nrow = n_ids, 0)
+    o <- matrix(ncol = n_ids, nrow = n_ids, 0)
     for (k in seq_len(nrow(dyads))) {
       m[dyads[k, 1], dyads[k, 2]] <- interactions[k, i]
+      o[dyads[k, 1], dyads[k, 2]] <- obseff[k, i]
     }
     imats[[i]] <- m
+    omats[[i]] <- o
   }
 
   # flag for when there is an empty interaction matrix generated
@@ -414,7 +443,8 @@ generate_data <- function(n_ids = NULL,
                   beta_shape_pos = beta_shape_pos_mod,
                   beta_shape_n = sum(beta_shape_pos > 0),
                   id_codes = vec,
-                  beh_names = rep(0, n_beh)
+                  beh_names = rep(0, n_beh),
+                  n_cors = 0
                   )
 
   if (do_indi_cat_slope) {
@@ -422,6 +452,11 @@ generate_data <- function(n_ids = NULL,
   }
 
   names(standat$beh_names) <- paste0("behav_", LETTERS[seq_len(n_beh)])
+
+
+  if (length(indi_sd) > 1) {
+    standat$n_cors <- sum(upper.tri(indi_sd))
+  }
 
   list(standat = standat,
        input_data = list(behav_type = btypes,
@@ -447,6 +482,7 @@ generate_data <- function(n_ids = NULL,
                                                  NA),
                         dsi = dsi,
                         sum_top3 = sum_top3,
-                        interaction_matrices = imats))
+                        interaction_matrices = imats,
+                        obseff_matrices = omats))
 
 }

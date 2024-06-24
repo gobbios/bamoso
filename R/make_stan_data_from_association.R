@@ -96,7 +96,8 @@ make_stan_data_from_association <- function(asso_table,
               prior_matrix = prior_matrix,
               id_codes = vec,
               beh_names = vec_behaviors,
-              behav_types = bdata
+              behav_types = bdata,
+              n_cors = 0
   )
   if (!is.null(indi_cat_pred)) {
     out$indi_cat_pred <- indi_cat_pred

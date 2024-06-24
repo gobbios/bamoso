@@ -20,6 +20,6 @@ utility to convert observation effort that is vector-based or NULL to list of ma
 \examples{
 obseff <- list(c(a = 2.3, b = 4.3, c = NA, d = 12),
                c(a = 2.3, b = 4.3, c = 222, d = 12))
-obseff_to_matrix(obseff = obseff)
+bamoso:::obseff_to_matrix(obseff = obseff)
 
 }

@@ -35,6 +35,11 @@
 
 make_prior <- function(response, type, obseff = NULL) {
   if (type == "count" || type == "dur_gamma") {
+    if (type == "count") {
+      if (any(obseff == 0, na.rm = TRUE)) {
+        stop("can't have any 0s in the observation effort for a 'count' behaviour", call. = FALSE)
+      }
+    }
     if (is.null(obseff)) obseff <- rep(1, length(response))
     if (any(response == 0)) response <- response + 0.1
     lresp <- log(response / obseff)
@@ -50,6 +55,12 @@ make_prior <- function(response, type, obseff = NULL) {
 
     scale <- 2.5
     if (type == "prop") {
+      if (any(obseff == 0, na.rm = TRUE)) {
+        stop("can't have any 0s in the observation effort for a 'prop' behaviour", call. = FALSE)
+      }
+      if (any(response / obseff > 1, na.rm = TRUE)) {
+        stop("can't have any values in 'prop' behaviour where the count is larger than the observation effort", call. = FALSE)
+      }
       lresp <- round(qlogis(response / obseff), 1)
     }
     if (type == "dur_beta") {
