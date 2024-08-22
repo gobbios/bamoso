@@ -36,4 +36,7 @@ res <- sociality_model(standat = standat, parallel_chains = 4,
 model_summary(res)
 }
 
+
+
+
 }

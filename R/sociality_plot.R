@@ -17,6 +17,11 @@
 #'                  model was fitted with multiple correlated behaviors,
 #'                  then this argument indicates the *pair* of behaviors
 #'                  for which the correlation posteriors should be displayed.
+#' @param xcols vector of length two, with the colors to use default are two
+#'              Zissou colors (blueish and yellow/gold)
+#' @param add_prior logical, default is \code{FALSE}. Should the prior be added
+#'                  to the plot. Careful: for now the prior is hardcoded in
+#'                  this function and doesn't take its value from \code{mod_res}!
 #'
 #' @return a plot
 #' @export
@@ -50,7 +55,13 @@ sociality_plot <- function(mod_res,
                            do_dyadic = TRUE,
                            do_indi = TRUE,
                            which_beh = NULL,
-                           which_cor = NULL) {
+                           which_cor = NULL,
+                           xcols = NULL,
+                           add_prior = FALSE) {
+
+  if (is.null(xcols)) xcols <- c("#3B99B1B3", "#EACB2BB3")
+  # hcl.colors(3, palette = "zissou1", alpha = 0.7)[1:2]
+
 
   if (!is.null(which_beh) && !is.null(which_cor)) {
     stop("can only supply which_beh *OR* which_cor", call. = FALSE)
@@ -61,7 +72,6 @@ sociality_plot <- function(mod_res,
 
   mod_res <- mod_res$mod_res
 
-  xcols <- hcl.colors(3, palette = "zissou1", alpha = 0.7)
 
   is_a_cor_plot <- FALSE
 
@@ -79,6 +89,7 @@ sociality_plot <- function(mod_res,
     p1 <- density(as.numeric(mod_res$draws(paste0("cors_indi[", index, "]"))))
     p2 <- density(as.numeric(mod_res$draws(paste0("cors_dyad[", index, "]"))))
     is_a_cor_plot <- TRUE
+    if (identical(xlim, c(0, 4))) xlim <- c(-1, 1)
     corname <- paste(bnames[which_cor], collapse = " * ")
   } else {
     if (!is.null(which_beh)) {
@@ -121,11 +132,14 @@ sociality_plot <- function(mod_res,
 
   axis(1)
 
-  if (is.null(which_cor)) {
-    pr <- brms::rstudent_t(4000, 3, 0, 1)
-    pr <- density(pr, adjust = 2)
-    polygon(pr, border = "grey")
+  if (add_prior) {
+    if (is.null(which_cor)) {
+      pr <- brms::rstudent_t(4000, 3, 0, 1)
+      pr <- density(pr, adjust = 2)
+      polygon(pr, border = "grey")
+    }
   }
+
 
   box(bty = "l")
 }

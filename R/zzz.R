@@ -83,6 +83,28 @@
 #' @format a list with named items.
 "sharks"
 
+#' crested macaque data
+#' @details
+#' \code{nigra2} contains grooming and proximity data for 19 female crested
+#' macaques (\emph{Macaca nigra}).
+#'
+#'
+#' @format a list with named items.
+#' @examples
+#' \dontrun{
+#' s <- make_stan_data_from_matrices(mats = list(groom = nigra2$groom,
+#'                                               prox = nigra2$prox),
+#'                                   behav_types = c("count", "prop"),
+#'                                   obseff = list(nigra2$obseff_groom,
+#'                                                 nigra2$obseff_prox),
+#'                                   correlations = TRUE)
+#'
+#' r <- sociality_model(s, parallel_chains = 4, seed = 17, adapt_delta = 0.9)
+#' summary(r)
+#' model_summary(r)
+#' }
+#'
+"nigra2"
 
 
 #' utility to convert observation effort that is vector-based or NULL to list of matrices

@@ -5,6 +5,9 @@
 #' @param what character, one of \code{"dyad_sd"}, \code{"indi_sd"},
 #'             \code{"dyad_vals"}, \code{"indi_vals"} or
 #'             \code{"beh_intercepts"}. See details
+#' @param axis integer, indicates which axis is to be returned. Only relevant
+#'             if the model was fitted with correlations (and at least 2
+#'              behaviors).
 #'
 #' @return a (named) matrix with variable number of columns representing the
 #'         posterior draws for the desired quantity.
@@ -37,6 +40,20 @@
 #' head(extract_samples(res, what = "beh_intercepts"))
 #' head(extract_samples(res, what = "indi_vals")[, 1:4])
 #' head(extract_samples(res, what = "dyad_vals")[, 1:4])
+#'
+#' # with correlations
+#' data(nigra2)
+#' s <- make_stan_data_from_matrices(mats = list(groom = nigra2$groom,
+#'                                               prox = nigra2$prox),
+#'                                   behav_types = c("count", "prop"),
+#'                                   obseff = list(nigra2$obseff_groom,
+#'                                                 nigra2$obseff_prox),
+#'                                   correlations = TRUE)
+#'
+#' r <- sociality_model(s, parallel_chains = 4, seed = 17, adapt_delta = 0.9)
+#' head(extract_samples(r, "indi_sd", axis = 1)) # grooming axis
+#' head(extract_samples(r, "indi_sd", axis = 2)) # proximity axis
+#' head(extract_samples(r, what = "indi_vals")[, 1:4])
 #' }
 
 extract_samples <- function(mod_res,
@@ -45,7 +62,8 @@ extract_samples <- function(mod_res,
                                      "beh_intercepts",
                                      "indi_vals",
                                      "dyad_vals"
-                                     )) {
+                                     ),
+                            axis = 1) {
 
   standat <- mod_res$standat
   mod_res <- mod_res$mod_res
@@ -56,14 +74,16 @@ extract_samples <- function(mod_res,
 
   if ("indi_sd" %in% what) {
     x <- mod_res$draws(variables = "indi_soc_sd", format = "draws_matrix")
-    res <- matrix(as.numeric(x), ncol = 1)
+    res <- matrix(as.numeric(x), ncol = ncol(x))
+    res <- res[, axis, drop = FALSE]
     colnames(res) <- "greg_sd"
     outres <- cbind(outres, res)
   }
 
   if ("dyad_sd" %in% what) {
     x <- mod_res$draws(variables = "dyad_soc_sd", format = "draws_matrix")
-    res <- matrix(as.numeric(x), ncol = 1)
+    res <- matrix(as.numeric(x), ncol = ncol(x))
+    res <- res[, axis, drop = FALSE]
     colnames(res) <- "affi_sd"
     outres <- cbind(outres, res)
   }
@@ -80,6 +100,10 @@ extract_samples <- function(mod_res,
   if ("indi_vals" %in% what) {
     x <- mod_res$draws(variables = "indi_soc_vals", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
+    if (standat$n_cors > 0) {
+      res <- res[, grepl(paste0(",", axis), colnames(x))]
+    }
+
     if (!is.null(standat)) {
       colnames(res) <- names(standat$id_codes)
     }
@@ -89,6 +113,9 @@ extract_samples <- function(mod_res,
   if ("dyad_vals" %in% what) {
     x <- mod_res$draws(variables = "dyad_soc_vals", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
+    if (standat$n_cors > 0) {
+      res <- res[, grepl(paste0(",", axis), colnames(x))]
+    }
     if (!is.null(standat)) {
       dyads <- paste(names(standat$id_codes)[standat$dyads_navi[, 1]],
                      names(standat$id_codes)[standat$dyads_navi[, 2]],

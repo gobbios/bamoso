@@ -15,13 +15,10 @@ data {
   int<lower=0> n_beh;
   // int<lower=0> behav_types[n_beh + 1]; // 1: counts (poiss), 2: counts (proportion, binomial) // old way
   array[n_beh + 1] int<lower=0> behav_types; // 1: counts (poiss), 2: counts (proportion, binomial)
-  // int<lower=0> interactions[n_dyads, n_beh]; // old way
   array[n_dyads, n_beh] int<lower=0> interactions;
   matrix[n_dyads, n_beh] interactions_cont;
-  // int<lower=0> dyads_navi[n_dyads, 2]; // old way
   array[n_dyads, 2] int<lower=0> dyads_navi;
   matrix[n_dyads, n_beh] obseff;
-  // int<lower=0> obseff_int[n_dyads, n_beh]; // old way
   array[n_dyads, n_beh] int<lower=0> obseff_int;
 
   // priors for intercepts
@@ -29,10 +26,8 @@ data {
 
   // info about indexing and number of optional shape parameter(s)
   int<lower=0> gamma_shape_n;
-  // int<lower=0> gamma_shape_pos[n_beh]; // old way
   array[n_beh] int<lower=0> gamma_shape_pos;
   int<lower=0> beta_shape_n;
-  // int<lower=0> beta_shape_pos[n_beh]; // old way
   array[n_beh] int<lower=0> beta_shape_pos;
 }
 parameters {
@@ -53,7 +48,7 @@ transformed parameters {
 }
 model {
   vector[n_dyads] lp = rep_vector(0.0, n_dyads);
-  vector[n_dyads] indi_sums = 0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]);
+  vector[n_dyads] indi_sums = sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]);
 
   // linear predictor
   lp = lp + indi_sums + dyad_soc_vals;
@@ -101,18 +96,18 @@ generated quantities {
   matrix[n_dyads, n_beh] interactions_pred_cont;
   for (i in 1:n_beh) {
     if (behav_types[i] == 1) {
-      interactions_pred[, i] = poisson_log_rng( 0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i] + log(obseff[, i]));
+      interactions_pred[, i] = poisson_log_rng( sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i] + log(obseff[, i]));
     }
     if (behav_types[i] == 2) {
-      interactions_pred[, i] = binomial_rng(obseff_int[, i], inv_logit(0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i]));
+      interactions_pred[, i] = binomial_rng(obseff_int[, i], inv_logit(sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i]));
     }
     if (behav_types[i] == 3) {
       interactions_pred_cont[, i] = to_vector(gamma_rng(shapes[gamma_shape_pos[i]],
-      shapes[gamma_shape_pos[i]] * exp(-(0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i] + log(obseff[, i])))));
+      shapes[gamma_shape_pos[i]] * exp(-(sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i] + log(obseff[, i])))));
     }
     if (behav_types[i] == 4) {
-      interactions_pred_cont[, i] = to_vector(beta_rng(shapes_beta[beta_shape_pos[i]] * (inv_logit(0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i])),
-      shapes_beta[beta_shape_pos[i]] * (1 - inv_logit(0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i]))));
+      interactions_pred_cont[, i] = to_vector(beta_rng(shapes_beta[beta_shape_pos[i]] * (inv_logit(sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i])),
+      shapes_beta[beta_shape_pos[i]] * (1 - inv_logit(sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[i]))));
     }
   }
 }

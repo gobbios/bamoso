@@ -6,7 +6,8 @@
 \usage{
 extract_samples(
   mod_res,
-  what = c("indi_sd", "dyad_sd", "beh_intercepts", "indi_vals", "dyad_vals")
+  what = c("indi_sd", "dyad_sd", "beh_intercepts", "indi_vals", "dyad_vals"),
+  axis = 1
 )
 }
 \arguments{
@@ -16,6 +17,10 @@ extract_samples(
 \item{what}{character, one of \code{"dyad_sd"}, \code{"indi_sd"},
 \code{"dyad_vals"}, \code{"indi_vals"} or
 \code{"beh_intercepts"}. See details}
+
+\item{axis}{integer, indicates which axis is to be returned. Only relevant
+if the model was fitted with correlations (and at least 2
+behaviors).}
 }
 \value{
 a (named) matrix with variable number of columns representing the
@@ -51,5 +56,19 @@ res <- sociality_model(standat = sdat, parallel_chains = 4,
 head(extract_samples(res, what = "beh_intercepts"))
 head(extract_samples(res, what = "indi_vals")[, 1:4])
 head(extract_samples(res, what = "dyad_vals")[, 1:4])
+
+# with correlations
+data(nigra2)
+s <- make_stan_data_from_matrices(mats = list(groom = nigra2$groom,
+                                              prox = nigra2$prox),
+                                  behav_types = c("count", "prop"),
+                                  obseff = list(nigra2$obseff_groom,
+                                                nigra2$obseff_prox),
+                                  correlations = TRUE)
+
+r <- sociality_model(s, parallel_chains = 4, seed = 17, adapt_delta = 0.9)
+head(extract_samples(r, "indi_sd", axis = 1)) # grooming axis
+head(extract_samples(r, "indi_sd", axis = 2)) # proximity axis
+head(extract_samples(r, what = "indi_vals")[, 1:4])
 }
 }

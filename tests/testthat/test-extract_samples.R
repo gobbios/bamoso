@@ -7,7 +7,7 @@ while (!good_to_go) {
 }
 
 standat <- x$standat
-suppressWarnings(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.8, show_messages = FALSE, refresh = 0)))
+suppressWarnings(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.8, show_exceptions = FALSE, show_messages = FALSE, refresh = 0)))
 
 
 test_that("extract_samples returns the correct amount of columns", {

@@ -1,4 +1,4 @@
-#' generate simulated affiliation data
+#' generate/simulate affiliation data
 #'
 #' @param n_ids numeric, number of individuals
 #' @param n_beh numeric, number of behaviors
@@ -7,10 +7,12 @@
 #'        \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 #' @param indi_sd numeric, the SD for the individual component. Must be
 #'                positive. Default is a random value
-#'                (\code{runif(1, 0, 4)}).
+#'                (\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+#'                See details.
 #' @param dyad_sd numeric, the SD for the dyadic component. Must be
 #'                positive. Default is a random value
-#'                (\code{runif(1, 0, 4)}).
+#'                (\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+#'                See details.
 #' @param beh_intercepts numeric of the same length as \code{n_beh}: the
 #'                       intercepts on the linear scale for each behavior
 #'                       (the group-level average). Default is random
@@ -69,6 +71,8 @@
 #'          'interacted'). While such matrices are an interesting edge case,
 #'          they represent a challenge for the model with its default settings.
 #'          Therefore, if such cases occur, the function will return a warning.
+#'
+#'
 #'
 #'
 #' @importFrom stats cor density rnorm rpois runif rbinom rgamma
@@ -189,6 +193,29 @@ generate_data <- function(n_ids = NULL,
   }
   if (length(indi_sd) != length(dyad_sd)) stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
 
+  # how many columns should the SD matrices have?
+  if (length(indi_sd) == 1) {
+    if (n_beh > 1) {
+      indi_sd_mat <- matrix(ncol = length(n_beh), nrow = length(n_beh), 1)
+      diag(indi_sd_mat) <- indi_sd
+      dyad_sd_mat <- matrix(ncol = length(n_beh), nrow = length(n_beh), 1)
+      diag(dyad_sd_mat) <- dyad_sd
+    }
+    if (n_beh == 1) {
+      indi_sd_mat <- matrix(indi_sd)
+      dyad_sd_mat <- matrix(dyad_sd)
+    }
+  } else {
+    # then it's matrix...
+    indi_sd_mat <- indi_sd
+    dyad_sd_mat <- dyad_sd
+  }
+  # rm(indi_sd)
+  # rm(dyad_sd)
+
+
+
+
 
   # create sociality values (individual-level and dyad-level)
 
@@ -203,7 +230,8 @@ generate_data <- function(n_ids = NULL,
 
   # indi_soc_vals_ini <- rnorm(n_ids, mean = 0, sd = indi_sd)
   # if (exact) indi_soc_vals_ini <- indi_soc_vals_ini <- as.numeric(scale(indi_soc_vals_ini) * indi_sd)
-  indi_soc_vals_ini <- rnorm_multi(n = n_ids, mu = rep(0, mulength), Sigma = matrix(indi_sd, ncol = mulength), empirical = exact)
+  # indi_soc_vals_ini <- rnorm_multi(n = n_ids, mu = rep(0, mulength), Sigma = matrix(indi_sd, ncol = mulength), empirical = exact)
+  indi_soc_vals_ini <- rnorm_multi(n = n_ids, mu = rep(0, mulength), Sigma = indi_sd_mat, empirical = exact)
 
   indi_soc_vals <- indi_soc_vals_ini
   if (do_indi_cat_slope) indi_soc_vals <- indi_soc_vals_ini + indi_cat_slope * indi_data$feature_cat
@@ -218,7 +246,8 @@ generate_data <- function(n_ids = NULL,
   # if (exact) {
   #   dyad_soc_vals <- as.numeric(scale(dyad_soc_vals) * dyad_sd + dyad_intercept)
   # }
-  dyad_soc_vals <- rnorm_multi(n = n_dyads, mu = rep(0, mulength), Sigma = matrix(dyad_sd, ncol = mulength), empirical = exact)
+  # dyad_soc_vals <- rnorm_multi(n = n_dyads, mu = rep(0, mulength), Sigma = matrix(dyad_sd, ncol = mulength), empirical = exact)
+  dyad_soc_vals <- rnorm_multi(n = n_dyads, mu = rep(0, mulength), Sigma = dyad_sd_mat, empirical = exact)
 
 
   # select behavior scale types, currently:
@@ -297,7 +326,7 @@ generate_data <- function(n_ids = NULL,
   interactions <- matrix(ncol = n_beh, nrow = n_dyads)
   for (i in seq_len(n_beh)) {
     lp <- indi_intercept + dyad_intercept +
-      0.5 * (indi_soc_vals[dyads[, 1], colindex[i]] + indi_soc_vals[dyads[, 2], colindex[i]]) +
+      sqrt(0.5) * (indi_soc_vals[dyads[, 1], colindex[i]] + indi_soc_vals[dyads[, 2], colindex[i]]) +
       dyad_soc_vals[, colindex[i]] +
       dyadic_covariate_slope * dyadic_covariate_predictor
 
@@ -334,7 +363,7 @@ generate_data <- function(n_ids = NULL,
     if (btypes[i] == "dur_beta") {
       # first translate mean (and variance) into shape1 and shape2 (for rbeta())
       lp_offs <- lp_b
-      # mean needs to be on logit scale
+      # mean needs to be on logit (positive [0-1]) scale
       mu <- plogis(lp_offs)
       phi <- disp_pars_beta[i]
 

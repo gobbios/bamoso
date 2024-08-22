@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_data.R
 \name{generate_data}
 \alias{generate_data}
-\title{generate simulated affiliation data}
+\title{generate/simulate affiliation data}
 \usage{
 generate_data(
   n_ids = NULL,
@@ -33,11 +33,13 @@ the kind of data to be generated. Possible values are \code{"prop"},
 
 \item{indi_sd}{numeric, the SD for the individual component. Must be
 positive. Default is a random value
-(\code{runif(1, 0, 4)}).}
+(\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+See details.}
 
 \item{dyad_sd}{numeric, the SD for the dyadic component. Must be
 positive. Default is a random value
-(\code{runif(1, 0, 4)}).}
+(\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+See details.}
 
 \item{indi_covariate_slope}{numeric, default is \code{NULL}. Fits an
 additional covariate effect on the
@@ -97,7 +99,7 @@ the arguments' defaults}
 }
 }
 \description{
-generate simulated affiliation data
+generate/simulate affiliation data
 }
 \details{
 Currently, four data types/distributions via \code{behav_types}

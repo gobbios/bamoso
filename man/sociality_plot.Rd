@@ -12,7 +12,9 @@ sociality_plot(
   do_dyadic = TRUE,
   do_indi = TRUE,
   which_beh = NULL,
-  which_cor = NULL
+  which_cor = NULL,
+  xcols = NULL,
+  add_prior = FALSE
 )
 }
 \arguments{
@@ -40,6 +42,13 @@ this argument indicates which behavior is to be plotted.}
 model was fitted with multiple correlated behaviors,
 then this argument indicates the \emph{pair} of behaviors
 for which the correlation posteriors should be displayed.}
+
+\item{xcols}{vector of length two, with the colors to use default are two
+Zissou colors (blueish and yellow/gold)}
+
+\item{add_prior}{logical, default is \code{FALSE}. Should the prior be added
+to the plot. Careful: for now the prior is hardcoded in
+this function and doesn't take its value from \code{mod_res}!}
 }
 \value{
 a plot
