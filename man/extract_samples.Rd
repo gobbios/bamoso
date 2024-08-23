@@ -6,7 +6,8 @@
 \usage{
 extract_samples(
   mod_res,
-  what = c("indi_sd", "dyad_sd", "beh_intercepts", "indi_vals", "dyad_vals"),
+  what = c("indi_sd", "dyad_sd", "beh_intercepts", "indi_vals", "dyad_vals", "indi_cors",
+    "dyad_cors"),
   axis = 1
 )
 }
@@ -70,5 +71,6 @@ r <- sociality_model(s, parallel_chains = 4, seed = 17, adapt_delta = 0.9)
 head(extract_samples(r, "indi_sd", axis = 1)) # grooming axis
 head(extract_samples(r, "indi_sd", axis = 2)) # proximity axis
 head(extract_samples(r, what = "indi_vals")[, 1:4])
+head(extract_samples(r, "indi_cors"))
 }
 }

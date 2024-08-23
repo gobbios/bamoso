@@ -54,6 +54,7 @@
 #' head(extract_samples(r, "indi_sd", axis = 1)) # grooming axis
 #' head(extract_samples(r, "indi_sd", axis = 2)) # proximity axis
 #' head(extract_samples(r, what = "indi_vals")[, 1:4])
+#' head(extract_samples(r, "indi_cors"))
 #' }
 
 extract_samples <- function(mod_res,
@@ -61,16 +62,49 @@ extract_samples <- function(mod_res,
                                      "dyad_sd",
                                      "beh_intercepts",
                                      "indi_vals",
-                                     "dyad_vals"
+                                     "dyad_vals",
+                                     "indi_cors",
+                                     "dyad_cors"
                                      ),
                             axis = 1) {
 
   standat <- mod_res$standat
   mod_res <- mod_res$mod_res
 
+  if (standat$n_cors == 0) {
+    if ("indi_cors" %in% what || "dyad_cors" %in% what) {
+      stop("model doesn't contain correlations")
+    }
+  }
+
   # number of draws
   nd <- mod_res$num_chains() * mod_res$metadata()$iter_sampling
   outres <- matrix(ncol = 0, nrow = nd)
+
+
+  if ("indi_cors" %in% what) {
+    bnames <- names(standat$beh_names)
+    xindex <- which(upper.tri(matrix(ncol = standat$n_beh, nrow = standat$n_beh)), arr.ind = TRUE)
+    xnames <- apply(xindex, 1, function(x) paste(bnames[x[1]], bnames[x[2]], sep = "_X_"))
+
+    x <- mod_res$draws(variables = "cors_indi", format = "draws_matrix")
+    res <- matrix(as.numeric(x), ncol = standat$n_cors)
+    colnames(res) <- paste0("cor_", xnames)
+    outres <- cbind(outres, res)
+  }
+
+  if ("dyad_cors" %in% what) {
+    bnames <- names(standat$beh_names)
+    xindex <- which(upper.tri(matrix(ncol = standat$n_beh, nrow = standat$n_beh)), arr.ind = TRUE)
+    xnames <- apply(xindex, 1, function(x) paste(bnames[x[1]], bnames[x[2]], sep = "_X_"))
+
+    x <- mod_res$draws(variables = "cors_dyad", format = "draws_matrix")
+    res <- matrix(as.numeric(x), ncol = standat$n_cors)
+    colnames(res) <- paste0("cor_", xnames)
+    outres <- cbind(outres, res)
+  }
+
+  # for indi SD and dyad SD: default is first axis!!!
 
   if ("indi_sd" %in% what) {
     x <- mod_res$draws(variables = "indi_soc_sd", format = "draws_matrix")
