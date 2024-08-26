@@ -7,6 +7,7 @@ gregariousness or pairwise affinity}
 \usage{
 ridge_plot(
   mod_res,
+  beh = 1,
   xlim = c(-4, 4),
   sel_subset = NULL,
   greg = TRUE,
@@ -19,6 +20,10 @@ ridge_plot(
 }
 \arguments{
 \item{mod_res}{model result from \code{\link{sociality_model}}}
+
+\item{beh}{integer, indicates which behavior is to be returned. Only relevant
+if the model was fitted with correlations (and at least 2
+behaviors).}
 
 \item{xlim}{numeric, x-axis limit (default is \code{c(-4, 4)})}
 

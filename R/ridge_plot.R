@@ -2,6 +2,9 @@
 #' gregariousness or pairwise affinity
 #'
 #' @param mod_res model result from \code{\link{sociality_model}}
+#' @param beh integer, indicates which behavior is to be returned. Only relevant
+#'            if the model was fitted with correlations (and at least 2
+#'            behaviors).
 #' @param xlim numeric, x-axis limit (default is \code{c(-4, 4)})
 #' @param greg logical, with default \code{TRUE}: plot gregariousness. If
 #'             \code{FALSE}: plot pairwise affinity
@@ -41,6 +44,7 @@
 
 
 ridge_plot <- function(mod_res,
+                       beh = 1,
                        xlim = c(-4, 4),
                        sel_subset = NULL,
                        greg = TRUE,
@@ -61,6 +65,11 @@ ridge_plot <- function(mod_res,
     alldraws <- mod_res$draws(variables = "dyad_soc_vals", format = "draws_matrix")
   }
 
+  # select axis (if correlations are present)
+  has_cors <- standat$n_cors > 0
+  if (has_cors) {
+    alldraws <- alldraws[, grepl(paste0(",", beh, "]"), colnames(alldraws), fixed = TRUE)]
+  }
 
   # convert character ids back to numeric (indexes)
   if (greg) {
@@ -108,9 +117,12 @@ ridge_plot <- function(mod_res,
     cnt <- 0
     for (i in order(xorder)) {
       cnt <- cnt + 1
-      p <- alldraws[, paste0("indi_soc_vals[", i, "]")]
-      # p <- as.numeric(mod_res$draws(paste0("indi_soc_vals[", i, "]"),
-      #                               format = "draws_matrix"))
+      if (has_cors) {
+        p <- alldraws[, paste0("indi_soc_vals[", i, ",", beh, "]")]
+      } else {
+        p <- alldraws[, paste0("indi_soc_vals[", i, "]")]
+      }
+
       p <- density(p, adjust = dens_adjust)
       px <- p$x
       py <- p$y
@@ -150,7 +162,13 @@ ridge_plot <- function(mod_res,
     cnt <- 0
     for (i in order(xorder)) {
       cnt <- cnt + 1
-      p <- alldraws[, paste0("dyad_soc_vals[", i, "]")]
+      if (has_cors) {
+        p <- alldraws[, paste0("dyad_soc_vals[", i, ",", beh, "]")]
+      } else {
+        p <- alldraws[, paste0("dyad_soc_vals[", i, "]")]
+      }
+
+
       p <- density(p, adjust = dens_adjust)
       px <- p$x
       py <- p$y

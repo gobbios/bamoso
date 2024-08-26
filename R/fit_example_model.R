@@ -10,7 +10,7 @@
 fit_example_model <- function(num = 1) {
   if (num == 1) {
     if (interactive()) {
-      cat("12 indis, 2 behaviors, cors generated, but not fitted\n")
+      cat("12 indis, 2 behaviors, cors generated, and fitted\n")
     }
     cors_indi <- matrix(c(0.7, 0.8, 0.8, 0.8), ncol = 2)
     cors_dyad <- matrix(c(0.7, 0.3, 0.3, 1.0), ncol = 2)
@@ -27,7 +27,7 @@ fit_example_model <- function(num = 1) {
 
   if (num == 2) {
     if (interactive()) {
-      cat("12 indis, 2 behaviors, cors generated, and fitted\n")
+      cat("12 indis, 2 behaviors, cors generated, but *not* fitted\n")
     }
 
     cors_indi <- matrix(c(0.7, 0.8, 0.8, 0.8), ncol = 2)
