@@ -73,7 +73,9 @@ extract_samples <- function(mod_res,
 
   if (standat$n_cors == 0) {
     if ("indi_cors" %in% what || "dyad_cors" %in% what) {
-      stop("model doesn't contain correlations")
+      message("model doesn't contain correlations (removing 'indi_cors' and/or 'dyad_cors' from argument 'what = ')\n")
+      what <- what[what != "indi_cors"]
+      what <- what[what != "dyad_cors"]
     }
   }
 

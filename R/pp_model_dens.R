@@ -4,7 +4,9 @@
 #' @param xvar numeric or character, the index or name of the behavior to
 #'             be plotted. Default is \code{1}, i.e. the first behavior.
 #' @param n_draws numeric
-#' @param xlim numeric
+#' @param xlim,ylim numeric, each of length two. Overrides axis limits gleaned
+#'                  from the data. Default is \code{NULL} (take values from the
+#'                  model and data)
 #' @param xadjust numeric
 #' @param plot_draws logical, should the random draws actually be plotted
 #'                   (default is \code{TRUE})
@@ -28,6 +30,7 @@ pp_model_dens <- function(mod_res,
                           n_draws = 20,
                           plot_draws = TRUE,
                           xlim = NULL,
+                          ylim = NULL,
                           xadjust = NULL,
                           selected_id = NULL,
                           print_info = FALSE,
@@ -100,9 +103,10 @@ pp_model_dens <- function(mod_res,
   minx <- 0
 
   if (is.null(xlim)) xlim <- c(minx, maxx)
+  if (is.null(ylim)) ylim <- c(miny, maxy * 1.05)
 
   suppressWarnings(plot(0, 0, type = "n", axes = FALSE,
-                        xlim = xlim, ylim = c(miny, maxy * 1.05),
+                        xlim = xlim, ylim = ylim,
                         yaxs = "i", las = 1, bty = "n", xaxs = "i", ...))
   axis(1)
   box(bty = "l")

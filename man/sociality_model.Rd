@@ -4,12 +4,15 @@
 \alias{sociality_model}
 \title{fit dyadic relationship model to one or more interaction matrices}
 \usage{
-sociality_model(standat, ...)
+sociality_model(standat, sans_dyadic = FALSE, ...)
 }
 \arguments{
 \item{standat}{stan data list (typically the result of a call
 to \code{\link{make_stan_data_from_matrices}} or
 \code{\link{make_stan_data_from_association}})}
+
+\item{sans_dyadic}{logical (default is \code{FALSE}). If \code{TRUE}
+fit the simple model without the dyadic components.}
 
 \item{...}{further arguments for \code{\link[cmdstanr]{sample}} (typically
 \code{parallel_chains}, \code{refresh},

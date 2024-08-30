@@ -1,7 +1,7 @@
 Package: bamoso
 Title: Bayesian modelling of animal social interactions
-Version: 0.2.5
-Date: 2024-08-26
+Version: 0.2.6
+Date: 2024-08-30
 Authors@R: 
     person(given = "Christof",
            family = "Neumann",
@@ -28,7 +28,8 @@ Suggests:
     xtable,
     EloSteepness,
     lme4,
-    igraph
+    igraph,
+    MASS
 Config/testthat/edition: 3
 RdMacros: Rdpack
 VignetteBuilder: knitr

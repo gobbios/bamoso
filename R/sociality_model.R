@@ -3,11 +3,14 @@
 #' @param standat stan data list (typically the result of a call
 #'                 to \code{\link{make_stan_data_from_matrices}} or
 #'                 \code{\link{make_stan_data_from_association}})
+#' @param sans_dyadic logical (default is \code{FALSE}). If \code{TRUE}
+#'                    fit the simple model without the dyadic components.
 #' @param ... further arguments for \code{\link[cmdstanr]{sample}} (typically
 #'            \code{parallel_chains}, \code{refresh},
 #'            \code{iter_warmup}, \code{iter_sampling},
 #'            \code{seed}, \code{adapt_delta},
 #'            and/or \code{step_size})
+#'
 #'
 #' @return a list (of class \code{dyadicmodel}) which contains the standata
 #'         list as first item and the CmdStanFit as second item
@@ -53,6 +56,7 @@
 #' }
 
 sociality_model <- function(standat,
+                            sans_dyadic = FALSE,
                             ...) {
 
   modeltype <- "simple"
@@ -63,9 +67,13 @@ sociality_model <- function(standat,
     modeltype <- "cor_mod"
   }
 
+  if (sans_dyadic) {
+      modeltype <- "sans_dyadic"
+  }
+
   mod <- get_model(type = modeltype)
   res <- mod$sample(data = standat, ...)
-  out <- list(standat = standat, mod_res = res)
+  out <- list(standat = standat, mod_res = res, modeltype = modeltype)
   class(out) <- "dyadicmodel"
   out
 }

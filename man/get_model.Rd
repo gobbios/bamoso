@@ -4,7 +4,7 @@
 \alias{get_model}
 \title{wrapper to provide model executable}
 \usage{
-get_model(type = c("simple", "indi_cat", "cor_mod"))
+get_model(type = c("simple", "indi_cat", "cor_mod", "sans_dyadic"))
 }
 \arguments{
 \item{type}{character, specify which model}

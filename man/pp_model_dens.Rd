@@ -10,6 +10,7 @@ pp_model_dens(
   n_draws = 20,
   plot_draws = TRUE,
   xlim = NULL,
+  ylim = NULL,
   xadjust = NULL,
   selected_id = NULL,
   print_info = FALSE,
@@ -27,7 +28,9 @@ be plotted. Default is \code{1}, i.e. the first behavior.}
 \item{plot_draws}{logical, should the random draws actually be plotted
 (default is \code{TRUE})}
 
-\item{xlim}{numeric}
+\item{xlim, ylim}{numeric, each of length two. Overrides axis limits gleaned
+from the data. Default is \code{NULL} (take values from the
+model and data)}
 
 \item{xadjust}{numeric}
 
