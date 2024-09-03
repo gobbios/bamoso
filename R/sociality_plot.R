@@ -21,7 +21,8 @@
 #'              Zissou colors (blueish and yellow/gold)
 #' @param add_prior logical, default is \code{FALSE}. Should the prior be added
 #'                  to the plot. Careful: for now the prior is hardcoded in
-#'                  this function and doesn't take its value from \code{mod_res}!
+#'                  this function and doesn't take its value from
+#'                  \code{mod_res}! (its value is \code{student_t(3, 0, 1)}).
 #'
 #' @return a plot
 #' @export
@@ -117,11 +118,24 @@ sociality_plot <- function(mod_res,
       tit <- bnames[which_beh]
     }
     if (is_a_cor_plot) tit <- corname
+
+    # legend with or without prior?
+    leg_labs <- c(labs$indi, labs$dyad)
+    leg_cols <- xcols[1:2]
+    leg_pch <- c(15, 15)
+    leg_lty <- c(FALSE, FALSE)
+    if (add_prior) {
+      leg_labs <- c(leg_labs, "prior")
+      leg_cols <- c(leg_cols, "grey")
+      leg_pch <- c(leg_pch, NA)
+      leg_lty <- c(leg_lty, 1)
+    }
+
     legend("topright",
-           legend = c(labs$indi, labs$dyad, ifelse(is_a_cor_plot, "", "prior")),
-           col = c(xcols[1:2], ifelse(is_a_cor_plot, NA, "grey")),
-           pch = c(15, 15, NA),
-           lty = c(NA, NA, 1),
+           legend = leg_labs,
+           col = leg_cols,
+           pch = leg_pch,
+           lty = leg_lty,
            bty = "n",
            cex = 0.7,
            title = tit)
@@ -139,7 +153,6 @@ sociality_plot <- function(mod_res,
       polygon(pr, border = "grey")
     }
   }
-
 
   box(bty = "l")
 }

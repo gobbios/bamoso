@@ -48,7 +48,8 @@ Zissou colors (blueish and yellow/gold)}
 
 \item{add_prior}{logical, default is \code{FALSE}. Should the prior be added
 to the plot. Careful: for now the prior is hardcoded in
-this function and doesn't take its value from \code{mod_res}!}
+this function and doesn't take its value from
+\code{mod_res}! (its value is \code{student_t(3, 0, 1)}).}
 }
 \value{
 a plot
