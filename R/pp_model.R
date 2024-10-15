@@ -50,7 +50,7 @@ pp_model <- function(mod_res,
   # deal with individual selection
   if (!is.null(selected_id)) {
     if (!selected_id %in% names(standat$id_codes)) {
-      stop("didn't find", shQuote(selected_id), "in stan data")
+      stop("didn't find ", shQuote(selected_id), " in stan data")
     }
     id_index <- which(names(standat$id_codes) == selected_id)
     navi <- standat$dyads_navi

@@ -48,6 +48,16 @@ If you find mistakes or have suggestions, I'd be very happy to hear about them v
 library(bamoso)
 ```
 
+# Terminology
+
+When **interactions** are mentioned in this document we refer to frequencies and durations of dyadic interactions.
+
+**Components** and **axes** are the overarching terms to refer to **affinity** and **gregariousness**. 
+E.g. 'Affinity is the dyadic component.'
+
+
+
+
 \clearpage
 
 # Quick start
@@ -55,10 +65,13 @@ library(bamoso)
 This first example illustrates how to apply the model to pretty much the simplest possible data set.
 We will skip over a lot of the details, and just show the general workflow.
 
+## Preparing the data
+
 Here we use grooming data from 19 Barbary macaques (*Macaca sylvanus*) recorded with focal animal sampling.
 These grooming data represent frequencies of grooming bouts (so we need a count model eventually) and are undirected.
 We also have information about observation effort, i.e. the time any two individuals *could* have interacted.
 The data are included in the `bamoso` package and are illustrated in figure \ref{fig:syl_net} (only six individuals shown there).
+The data are stored initially in matrix form.
 
 ```{r, echo=FALSE, fig.width=8, fig.height=2.5, out.width="80%", fig.align='center', fig.cap="\\label{fig:syl_net}Example data set. Grooming frequencies on the left and dyadic observation hours on the right."}
 par(mar = c(0, 2, 2, 0), family = "serif", cex = 0.7, mfrow = c(1, 2))
@@ -91,6 +104,8 @@ standat <- make_stan_data_from_matrices(mats = list(groom = groom_mat),
                                         behav_types = "count",
                                         obseff = list(obseff_mat))
 ```
+
+## Fitting the model    
 
 Now we can fit the model, using the `sociality_model()` function.
 This function requires only the converted data set as argument.
@@ -135,7 +150,7 @@ The two example checks in figure \ref{fig:syl_net_pp} indicate no obvious proble
 Now we can look at the actual results graphically.
 We start by looking at the posteriors for the individual and the dyadic component.
 
-```{r, echo=2:5, fig.width=5, fig.height=2.1, out.width="50%", fig.align='center', fig.cap="\\label{fig:syl_net_soc}Posteriors for the two sociality components."}
+```{r, echo=2:5, fig.width=5, fig.height=2.1, out.width="50%", fig.align='center', fig.cap="\\label{fig:syl_net_soc}Posteriors for the two sociality components. Variation among dyads is larger than variation among individuals."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
 sociality_plot(res)
 ```
@@ -196,7 +211,7 @@ To generate these data we use a function included in the package that served as 
 The key settings for data generation are the arguments for the magnitude of individual- and dyad-level variation (`indi_sd=` and `dyad_sd=`).
 Both values were chosen to be fairly large.
 We simulate two behaviors, one a count behavior and the second a proportion.
-Both also have their own observation effort specified, varying between 5 and 100 'hours' for the count behavior, and between 5 and 100 'trials' for the proportion\footnote{Note that the proportion is actually also coded as a count, i.e. `number of successes', which in combination with the `trials' provided results in a proportion.}.
+Both also have their own observation effort specified, varying between 5 and 50 'hours' for the count behavior, and between 5 and 100 'trials' for the proportion\footnote{Note that the proportion is actually also coded as a count, i.e. `number of successes', which in combination with the `trials' provided results in a proportion.}.
 The behavior intercepts are both set to -3, which corresponds to a fairly low baseline for each behavior\footnote{For a count variable an intercept of $-3$ corresponds to a rate of $0.05$ events per 1 unit of observation effort ($exp(-3) = 0.0498$). For the proportion a baseline of $-3$ corresponds to probability of success in a single `trial' of $0.05$ ($\textrm{logit}^{-1}(-3) = 0.0474$)}.
 Recall that these intercepts represent the expected interactions for an average dyad composed of two average individuals.
 
@@ -205,7 +220,7 @@ set.seed(1)
 d <- generate_data(n_ids = 14, n_beh = 2,
                    behav_types = c("count", "prop"),
                    indi_sd = 1.5, dyad_sd = 1.5,
-                   beh_intercepts = c(-0.9, -1.2),
+                   beh_intercepts = c(-3, -3),
                    prop_trials = c(5, 100),
                    count_obseff = c(5, 50))
 ```
@@ -310,12 +325,14 @@ Divergent transitions occur quite regularly, but usually can be resolved by sett
 So let's do this, and in the process also change a few more settings, just to illustrate how this works.
 
 ```{r fit_example_1_2, cache=TRUE, include=FALSE}
-fit1 <- sociality_model(standat = sdat1, seed = 7509, adapt_delta = 0.9,
+fit1 <- sociality_model(standat = sdat1, seed = 7508, 
+                        adapt_delta = 0.9, 
                         parallel_chains = 4, iter_warmup = 1200)
 ```
 
 ```{r fit_example_1_2_display, cache=FALSE, eval = FALSE}
-fit1 <- sociality_model(standat = sdat1, seed = 7509, adapt_delta = 0.9,
+fit1 <- sociality_model(standat = sdat1, seed = 7508, 
+                        adapt_delta = 0.9, 
                         parallel_chains = 4, iter_warmup = 1200)
 ```
 
@@ -348,11 +365,11 @@ Next, we go to some visual model checks.
 Because the underlying observed data are discrete (counts in this first example), we use histograms provided by `pp_model()` to look at predictions from the model.\footnote{for continuous data, use density plots from `pp\_model\_dens()`.}
 One thing to be careful about for these kinds of plot is the width of bins for the histogram.
 Here I chose 12 bins, ranging from 0 to 120 (`r max(sdat1$interactions[, 1])` being the value for the dyad that interacted the most).
-Actually, I set the bins as a sequence from $-0.5$ to $119.5$ in steps of $10$ (`bins <- seq(-0.5, 119.5, by = 10)`) to be sure that we cover all values from $0$ through $9$ in the first bin, from $10$ to $19$ in the second and so forth.
+Actually, I set the bins as a sequence from $-0.5$ to $199.5$ in steps of $10$ (`bins <- seq(-0.5, 119.5, by = 10)`) to be sure that we cover all values from $0$ through $9$ in the first bin, from $10$ to $19$ in the second and so forth.
 
 ```{r, echo=2:10, fig.width=5, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp01}Posterior predictive checks for the entire group."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
-bins <- seq(-0.5, 699.5, by = 10)
+bins <- seq(-0.5, 199.5, by = 10)
 pp_model(mod_res = fit1, xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
 axis(2, las = 1, cex.axis = 0.8)
 ```
@@ -395,15 +412,15 @@ The goal is to a get a grasp on how well the model performs.
 My personal rule of thumb is to use between 10 to 20 bins (equally distributed along the range of data).
 
 
-```{r, echo=2:20, fig.width=8, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp02}Posterior predictive checks for the entire group with a different resolutions along the x-axis (compare to figure \\ref{fig:pp01}). Note that the first plot is cut at 20 along the x-axis for visual purposes."}
+```{r, echo=2:20, fig.width=8, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:pp02}Posterior predictive checks for the entire group with different resolutions along the x-axis (compare to figure \\ref{fig:pp01}). Note that the first plot is cut at 20 along the x-axis for visual purposes."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
 
-bins <- seq(-0.5, 120.5, by = 1)
+bins <- seq(-0.5, 199.5, by = 1)
 pp_model(mod_res = fit1, xlab = "count of behaviour 1", ylab = "frequency", xbreaks = bins, xlim = c(0, 20))
 axis(2, las = 1, cex.axis = 0.8)
 
-bins <- seq(-0.5, 149.5, by = 50)
-pp_model(mod_res = fit1, xlab = "count of behaviour 1", ylab = "frequency", xbreaks = bins, xlim = c(0, 150))
+bins <- seq(-0.5, 199.5, by = 50)
+pp_model(mod_res = fit1, xlab = "count of behaviour 1", ylab = "frequency", xbreaks = bins, xlim = c(0, 200))
 axis(2, las = 1, cex.axis = 0.8)
 ```
 
@@ -422,22 +439,43 @@ Now, the model predicts also values of 90 up to 120 interactions for that dyad.
 The key point here is that this not problematic, but just illustrates that the model is not predicting *perfectly* but in any case does a good job at predicting that this dyad interacts substantially more than the other dyads of individual C.
 
 
-```{r, echo=2:20, fig.width=8, fig.height=2.4, fig.cap="\\label{fig:pp03}Posterior predictive checks for selected individuals."}
-par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 3))
+```{r, echo=3:30, fig.width=8, fig.height=2.4, fig.cap="\\label{fig:pp03}Posterior predictive checks for selected individuals."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
+par(mfrow = c(1, 3))
 
-bins <- seq(-0.5, 119.5, by = 5)
 
-pp_model(mod_res = fit1, selected_id = "A", xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+bins <- seq(-0.5, 199.5, by = 2)
+pp_model(mod_res = fit1, selected_id = "A", xbreaks = bins, xlim = c(-1, 50),
+         xlab = "count of behaviour 1", ylab = "frequency")
 legend("top", "A", bty = "n")
 axis(2, las = 1)
 
-pp_model(mod_res = fit1, selected_id = "B", xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+bins <- seq(-0.5, 199.5, by = 5)
+pp_model(mod_res = fit1, selected_id = "B", xbreaks = bins, xlim = c(-1, 200), 
+         xlab = "count of behaviour 1", ylab = "frequency")
 legend("top", "B", bty = "n")
 axis(2, las = 1)
 
-pp_model(mod_res = fit1, selected_id = "C", xbreaks = bins, xlab = "count of behaviour 1", ylab = "frequency")
+bins <- seq(-0.5, 199.5, by = 1)
+pp_model(mod_res = fit1, selected_id = "C", xbreaks = bins, xlim = c(-1, 20),
+         xlab = "count of behaviour 1", ylab = "frequency")
 legend("top", "C", bty = "n")
 axis(2, las = 1)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+m1 + t(m1)
+
+id_index <- which(names(sdat1$id_codes) == "C")
+navi <- sdat1$dyads_navi
+dyad_index <- which(apply(navi, 1, function(xx) id_index %in% xx))
+p <- as.matrix(fit1$mod_res$draws(variables = "interactions_pred",
+                             format = "matrix"))
+p <- p[, grepl(paste0(",", 1, "\\]", collapse = ""), colnames(p))]
+
+p <- p[, dyad_index, drop = FALSE]
+
+
 ```
 
 
@@ -451,7 +489,6 @@ The conclusion here is that our model performs well with respect to predicting i
 Figure \ref{fig:pp04}b shows the same approach for the inter-quartile range. 
 
 At the moment, there are only a handful of these summary statistics defined in `pp_model_stat()` (`"mean"`, `"min"`, `"max"`, `"iqr"`, and `"range_width"`).
-
 
 
 ```{r, echo=2:4, fig.width=8, fig.height=3, out.width="80%", fig.align='center', fig.cap="\\label{fig:pp04}Posterior predictive checks for the entire group using summary statistics."}
@@ -639,7 +676,192 @@ pp_model_dens(mod_res = fit3, xvar = "prox",
 
 # Extending the model
 
-to be written
+## More than one behaviour with correlated axes
+
+As mentioned above, when we fit the model to data we make the implicit (or hopefully explicit) assumption that there is exactly one, not two or three, underlying gregariousness axes (and of course exactly one affinity axis (not two or three or ...)).
+But this is just an assumption.
+We might as well make the assumption that more than one gregariousness axis exists and that they are correlated.
+Imagine two behaviors.
+Here we could estimate two gregariousness axes, one for each behavior. 
+Plus, we can actually investigate whether these multiple axes are correlated with each other.
+
+Let's look at an example with three behaviors, so we have three gregariousness axes and three affinity axes.
+Since there are three behaviors there are also three correlations between them (G1 with G2, G1 with G3 and G2 with G3 (and the same for affinity)).
+We simulate the data so we can actually be sure what the true correlations are.
+Without going into detail, we simulate interactions such that the correlations are $-0.4$, $0.4$, and $0.6$ for gregariousness.
+We also set correlations for affinity.
+These values are handed over to `generate_data` via SD/correlation matrices, which also encode the ground truth SD values in the diagonal.
+
+```{r}
+corgreg12 <- -0.4
+corgreg13 <- 0.4
+corgreg23 <- 0.6
+
+gregmat <- matrix(c(0.9, corgreg12, corgreg13,  
+                    corgreg12, 1.5, corgreg23,
+                    corgreg13, corgreg23, 1.2), 
+                  ncol = 3, byrow = TRUE)
+
+coraffi12 <- -0.6
+coraffi13 <- 0.3
+coraffi23 <- -0.4
+affimat <- matrix(c(0.5, coraffi12, coraffi13,
+                    coraffi12, 1.2, coraffi23,
+                    coraffi13, coraffi23, 1.2), 
+                  ncol = 3, byrow = TRUE)
+
+set.seed(1)
+ex <- generate_data(n_ids = 18, n_beh = 3,
+                    behav_types = c("count", "prop", "prop"),
+                    indi_sd = gregmat, 
+                    dyad_sd = affimat,
+                    beh_intercepts = c(1.4, -0.7, -1.7), exact = TRUE)
+```
+
+```{r, echo = FALSE, eval = FALSE}
+# s1 <- ex$standat
+# s2 <- ex$standat
+# s2$n_cors <- 0
+```
+
+
+The `generate_data()` function actually prepares the data directly, but we take the detour and create everything by hand.
+Here are the interactions matrices
+
+```{r}
+b1 <- ex$processed$interaction_matrices[[1]]
+b2 <- ex$processed$interaction_matrices[[2]]
+b3 <- ex$processed$interaction_matrices[[3]]
+```
+
+and the observation effort matrices\footnote{The matrices with the observation effort are somewhat simple looking, because during the data generation we assume equal observation effort over all dyads}.
+
+```{r}
+o1 <- ex$processed$obseff_matrices[[1]]
+o2 <- ex$processed$obseff_matrices[[2]]
+o3 <- ex$processed$obseff_matrices[[3]]
+```
+
+Now we can prepare the data for usage with `sociality_model()`.
+In fact, we want to fit two models.
+One should mirror the true structure of the data-generating process and one should be oblivious and keep assuming single gregariousness and affinity axes.
+
+
+```{r}
+s1 <- make_stan_data_from_matrices(mats = list(b1 = b1, b2 = b2, b3 = b3), 
+                                   behav_types = c("count", "prop", "prop"), 
+                                   obseff = list(o1, o2, o3))
+```
+
+And to indicate that we want to fit separate axes and correlations we set `correlation = TRUE`:
+
+```{r}
+s2 <- make_stan_data_from_matrices(mats = list(b1 = b1, b2 = b2, b3 = b3), 
+                                   behav_types = c("count", "prop", "prop"), 
+                                   obseff = list(o1, o2, o3), 
+                                   correlations = TRUE)
+```
+
+
+With these two data objects we can now fit the two models.
+
+
+```{r fit_example_cor_correct, cache=TRUE, results='hide'}
+# incorrect model
+r1 <- sociality_model(s1, parallel_chains = 4, refresh = 0, show_exceptions = FALSE, seed = 42)
+```
+
+```{r fit_example_cor_incorrect, cache=TRUE, results='hide'}
+# correct model
+r2 <- sociality_model(s2, parallel_chains = 4, refresh = 0, show_exceptions = FALSE, seed = 42)
+```
+
+
+```{r}
+summary(r1)
+```
+
+```{r}
+summary(r2)
+```
+
+Those results for the 'correct' model look alright (the estimated correlations are close to the true values and so are the SDs and intercepts).
+In contrast, the incorrect model doesn't even get the SDs right (and how could it, the model only estimates one individual and one dyadic axis, no three).
+But how do we know which model to use?
+In reality we don't know the true model.
+The obvious choice would be to use some kind of model comparison, which should at least let us drop the worst models.
+But that's yet to be implemented.
+
+For now, let's look at posterior predictive checks.
+And there it becomes clear that there is a problem with the second model (figures \ref{fig:ppcheckcormodel1} and \ref{fig:ppcheckcormodel2}), while the first model seems to do a reasonable job.
+
+
+```{r, echo=FALSE, fig.width=8, fig.height=3.2, out.width="80%", fig.align='center', fig.cap="\\label{fig:ppcheckcormodel1} Top row: correct model, bottom row: incorrect model. Histogram is the observed data."}
+par(mfrow = c(2, 3), family = "serif", mar = c(3, 2, 1, 1))
+bamoso::pp_model(r2, xvar = 1)
+bamoso::pp_model(r2, xvar = 2)
+bamoso::pp_model(r2, xvar = 3)
+
+bamoso::pp_model(r1, xvar = 1, main = "behavior 1")
+bamoso::pp_model(r1, xvar = 2, main = "behavior 2")
+bamoso::pp_model(r1, xvar = 3, main = "behavior 3")
+```
+
+
+```{r, echo=FALSE, fig.width=8, fig.height=3.2, out.width="80%", fig.align='center', fig.cap="\\label{fig:ppcheckcormodel2} Top row: correct model, bottom row: incorrect model. Red is the observed value."}
+par(mfcol = c(2, 3), family = "serif", mar = c(3, 2, 1, 1), xaxs = "i")
+bamoso::pp_model_stat(r2, 1, "max", xlim = c(20, 70), main = "")
+bamoso::pp_model_stat(r1, 1, "max", xlim = c(20, 70), main = "max of behaviour 1")
+
+bamoso::pp_model_stat(r2, 2, "iqr", xlim = c(20, 50), main = "")
+bamoso::pp_model_stat(r1, 2, "iqr", xlim = c(20, 50), main = "IQR of behaviour 2")
+
+bamoso::pp_model_stat(r2, 3, "iqr", xlim = c(10, 30), main = "")
+bamoso::pp_model_stat(r1, 3, "iqr", xlim = c(10, 30), main = "IQR of behaviour 3")
+
+```
+
+
+And finally, let's look at some results plots of the model with the correlations.
+
+
+```{r, fig.width=8, fig.height=1.8, out.width="80%", fig.align='center', fig.cap="Posteriors of estimated correlations. Vertical lines indicate true values (input values for simulated data)."}
+par(mfcol = c(1, 3), family = "serif", mar = c(3, 2, 1, 1), xaxs = "i")
+sociality_plot(r2, which_cor = c(1, 2), xlim = c(-1, 1))
+abline(v = rep(gregmat[1, 2], 2), col = c("darkgrey", "#3B99B1B3"), lwd = c(3.5, 2))
+abline(v = rep(affimat[1, 2], 2), col = c("darkgrey", "#EACB2BB3"), lwd = c(3.5, 2))
+
+sociality_plot(r2, which_cor = c(1, 3), xlim = c(-1, 1))
+abline(v = rep(gregmat[1, 3], 2), col = c("darkgrey", "#3B99B1B3"), lwd = c(3.5, 2))
+abline(v = rep(affimat[1, 3], 2), col = c("darkgrey", "#EACB2BB3"), lwd = c(3.5, 2))
+
+sociality_plot(r2, which_cor = c(2, 3), xlim = c(-1, 1))
+abline(v = rep(gregmat[2, 3], 2), col = c("darkgrey", "#3B99B1B3"), lwd = c(3.5, 2))
+abline(v = rep(affimat[2, 3], 2), col = c("darkgrey", "#EACB2BB3"), lwd = c(3.5, 2))
+```
+
+```{r, fig.width=8, fig.height=1.8, out.width="80%", fig.align='center', fig.cap="Posteriors of estimated differentiation in gregariousness and affinity. Vertical lines indicate true values (input values for simulated data)."}
+par(mfcol = c(1, 3), family = "serif", mar = c(3, 2, 1, 1), xaxs = "i")
+sociality_plot(r2, which_beh = 1, xlim = c(0, 3))
+abline(v = rep(gregmat[1, 1], 2), col = c("darkgrey", "#3B99B1B3"), lwd = c(3.5, 2))
+abline(v = rep(affimat[1, 1], 2), col = c("darkgrey", "#EACB2BB3"), lwd = c(3.5, 2))
+
+sociality_plot(r2, which_beh = 2, xlim = c(0, 3))
+abline(v = rep(gregmat[2, 2], 2), col = c("darkgrey", "#3B99B1B3"), lwd = c(3.5, 2))
+abline(v = rep(affimat[2, 2], 2), col = c("darkgrey", "#EACB2BB3"), lwd = c(3.5, 2))
+
+sociality_plot(r2, which_beh = 3, xlim = c(0, 3))
+abline(v = rep(gregmat[3, 3], 2), col = c("darkgrey", "#3B99B1B3"), lwd = c(3.5, 2))
+abline(v = rep(affimat[3, 3], 2), col = c("darkgrey", "#EACB2BB3"), lwd = c(3.5, 2))
+```
+
+
+## Correlation example with empirical data
+
+TBD.
+
+
+more to be written
 
 \clearpage
 
@@ -652,6 +874,139 @@ In this section, I just want to demonstrate a few intuitions I have/had and see 
 to be written
 
 
+
+
+
+## Correlated axes 1
+
+We assume that when we have two or more behaviors, that they have one underlying affinity and gregariousness axis.
+This should be essentially the same as assuming that we have one axis per behavior and that these axes perfectly correlated with each other.
+So if we generate a data set of interactions of two behaviors and we generate them with two axes that strongly correlate, I would expect no major difference in inference between a model that incorporate the correlations and one that doesn't.
+
+
+
+```{r intui_cor1_models, cache=TRUE, echo=TRUE, eval = FALSE ,include=FALSE}
+cors_dyad <- matrix(c(1.5, 0.95, 0.95, 0.5), ncol = 2)
+cors_indi <- matrix(c(1, 0.95, 0.95, 1), ncol = 2)
+
+set.seed(123)
+x <- generate_data(n_ids = 18, n_beh = 2,
+                   beh_intercepts = c(-1.5, 0.5), 
+                   behav_types = c("prop", "prop"), 
+                   indi_sd = cors_indi, 
+                   dyad_sd = cors_dyad)
+
+dat_withcor <- x$standat
+r_withcor <- sociality_model(dat_withcor, parallel_chains = 4, seed = 1,
+                            iter_warmup = 500, iter_sampling = 500)
+
+dat_nocor <- x$standat
+dat_nocor$n_cors <- 0
+r_nocor <- sociality_model(dat_nocor, parallel_chains = 4, seed = 1, 
+                          iter_warmup = 500, iter_sampling = 500)
+
+```
+
+
+```{r, echo=TRUE, eval=FALSE}
+post_withcor <- extract_samples(r_withcor, what = c("indi_sd", "dyad_sd"))
+post_nocor <- extract_samples(r_nocor, what = c("indi_sd", "dyad_sd"))
+apply(post_withcor, 2, median)
+apply(post_nocor, 2, median)
+
+```
+
+
+So that didn't work out as I expected...
+What I overlooked (duh) was that this intuition can only be correct if the SD of the two affinity axes is identical (and not only the correlation large).
+So if we look at the results of the models this becomes apparent quickly.
+
+
+```{r, echo=TRUE, eval = FALSE, fig.width=8, fig.height=3.4, out.width="80%", fig.cap=figcap, fig.align='center'}
+par(family = "serif", mgp = c(1.5, 0.5, 0), las = 1, mar = c(3, 3, 1, 1), tcl = 0)
+par(mfrow = c(2, 3))
+
+p <- model_summary(r_withcor)
+pa <- p[p$categ == "dyad_vals" & p$beh == "behav_A", "median"]
+pb <- p[p$categ == "dyad_vals" & p$beh == "behav_B", "median"]
+
+p <- model_summary(r_nocor)
+ps <- p[p$categ == "dyad_vals", "median"]
+
+plot(x$input_data$dyad_soc_vals[, 1], pa, asp = 1, xlab = "true values (behavior 1)",
+     ylab = "estimated (cor model, behav 1)",
+     xlim = c(-4, 4), ylim = c(-4, 4), yaxs = "i", xaxs = "i")
+abline(0, 1, lty = 2)
+plot(x$input_data$dyad_soc_vals[, 1], pb, asp = 1, xlab = "true values (behavior 1)",
+     ylab = "estimated (cor model, behav 2)",
+     xlim = c(-4, 4), ylim = c(-4, 4), yaxs = "i", xaxs = "i")
+abline(0, 1, lty = 2)
+plot(x$input_data$dyad_soc_vals[, 1], ps, asp = 1, xlab = "true values (behavior 1)",
+     ylab = "estimated (model without cor)",
+     xlim = c(-4, 4), ylim = c(-4, 4), yaxs = "i", xaxs = "i")
+abline(0, 1, lty = 2)
+
+plot(x$input_data$dyad_soc_vals[, 2], pa, asp = 1, xlab = "true values (behavior 2)",
+     ylab = "estimated (cor model, behav 1)",
+     xlim = c(-4, 4), ylim = c(-4, 4), yaxs = "i", xaxs = "i")
+abline(0, 1, lty = 2)
+plot(x$input_data$dyad_soc_vals[, 2], pb, asp = 1, xlab = "true values (behavior 2)",
+     ylab = "estimated (cor model, behav 2)",
+     xlim = c(-4, 4), ylim = c(-4, 4), yaxs = "i", xaxs = "i")
+abline(0, 1, lty = 2)
+plot(x$input_data$dyad_soc_vals[, 2], ps, asp = 1, xlab = "true values (behavior 2)",
+     ylab = "estimated (model without cor)",
+     xlim = c(-4, 4), ylim = c(-4, 4), yaxs = "i", xaxs = "i")
+abline(0, 1, lty = 2)
+```
+
+
+
+
+
+
+## Correlated axes 2
+
+```{r, eval = FALSE}
+set.seed(123)
+cors_indi <- matrix(c(1.3, 0.7, 0.7, 1.3), ncol = 2)
+cors_dyad <- matrix(c(0.3, 0.3, 0.3, 0.3), ncol = 2)
+x <- generate_data(n_ids = 12, n_beh = 2, 
+                   beh_intercepts = c(0.5, 0.5), behav_types = c("count", "count"), 
+                   indi_sd = cors_indi, dyad_sd = cors_dyad)
+s <- x$standat
+r <- sociality_model(s, parallel_chains = 4, seed = 1, adapt_delta = 0.85, 
+                     show_exceptions = FALSE, refresh = 0,
+                     iter_warmup = 500, iter_sampling = 1000)
+summary(r)
+s1 <- extract_samples(r, "indi_vals", axis = 1)
+s2 <- extract_samples(r, "indi_vals", axis = 2)
+
+
+plot(0, 0, type = "n", xlim = c(-5, 5), ylim = c(-5, 5), asp = 1)
+
+for (i in ix) {
+  points(s1[, i], s2[, i], pch = ".", cex = 0.5, col = grey(0.1, 0.2))
+}
+for (i in ix) {
+  zz <- MASS::kde2d(s1[, i], s2[, i], n = 51)
+  pdata <- contourLines(zz, levels = quantile(zz$z, 0.95))
+  polygon(pdata[[1]]$x, pdata[[1]]$y, border = 'red', lwd = 1.6)
+}
+points(colMeans(s1), colMeans(s2), pch = 4, col = 'red', lwd = 3)
+
+```
+
+
+
+
+
+
+
+
+
+\clearpage
+
 ```{r, echo=FALSE, eval = TRUE}
 # this is forced to be evaluated!
 stime <- "unknown"
@@ -660,9 +1015,7 @@ if (identical(Sys.getenv("NOT_CRAN"), "true")) {
 }
 ```
 
-
 This document took `r stime` minutes to compile.
-
 
 \clearpage
 

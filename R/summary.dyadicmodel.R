@@ -14,11 +14,23 @@ summary.dyadicmodel <- function(object, ...) {
 
   has_correlations <- object$standat$n_cors > 0
 
+  sans_dyadic <- FALSE
   if (!has_correlations) {
-    d <- object$mod_res$draws(c("indi_soc_sd", "dyad_soc_sd"),
-                              format = "draws_matrix")
-    qs_i <- sprintf("%.2f", quantile(d[, "indi_soc_sd"], c(0.055, 0.5, 0.945)))
-    qs_d <- sprintf("%.2f", quantile(d[, "dyad_soc_sd"], c(0.055, 0.5, 0.945)))
+    if ("dyad_soc_sd" %in% object$mod_res$metadata()$model_params) {
+      d <- object$mod_res$draws(c("indi_soc_sd", "dyad_soc_sd"),
+                                format = "draws_matrix")
+      qs_i <- sprintf("%.2f", quantile(d[, "indi_soc_sd"], c(0.055, 0.5, 0.945)))
+      qs_d <- sprintf("%.2f", quantile(d[, "dyad_soc_sd"], c(0.055, 0.5, 0.945)))
+    } else {
+      sans_dyadic <- TRUE
+      d <- object$mod_res$draws(c("indi_soc_sd"),
+                                format = "draws_matrix")
+      qs_i <- sprintf("%.2f", quantile(d[, "indi_soc_sd"], c(0.055, 0.5, 0.945)))
+      # qs_d <- sprintf("%.2f", quantile(d[, "dyad_soc_sd"], c(0.055, 0.5, 0.945)))
+    }
+
+
+
   }
   if (has_correlations) {
     d <- object$mod_res$draws(c("indi_soc_sd", "dyad_soc_sd"),
@@ -60,8 +72,14 @@ summary.dyadicmodel <- function(object, ...) {
     cat("sociality estimates:\n")
     cat("  individual gregariousness SD (median [89% CI]):",
         qs_i[2], paste0("[", qs_i[1], " - ", qs_i[3], "]\n"))
-    cat("  pairwise affinity SD (median [89% CI]):        ",
-        qs_d[2], paste0("[", qs_d[1], " - ", qs_d[3], "]\n"))
+
+    if (sans_dyadic) {
+      cat("  ~~no pairwise affinity estimated~~...\n        ")
+    } else {
+      cat("  pairwise affinity SD (median [89% CI]):        ",
+          qs_d[2], paste0("[", qs_d[1], " - ", qs_d[3], "]\n"))
+    }
+
     cat("--------------------\n")
   }
   if (has_correlations) {

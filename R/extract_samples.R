@@ -14,7 +14,7 @@
 #' @export
 #' @details
 #' The \code{what = } argument can take on one the following values:
-#' \itemize{
+#' \describe{
 #'  \item{\code{"indi_sd"}:}{The gregariousness variation}
 #'  \item{\code{"dyad_sd"}:}{The affinity variation}
 #'  \item{\code{"indi_vals"}}{The gregariousness values for each individual}

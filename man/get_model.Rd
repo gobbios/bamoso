@@ -19,8 +19,11 @@ wrapper to provide model executable
 \code{type} can be one of
 
 \itemize{
-\item \code{"simple"}: the basic model
-\item \code{"indi_cat"}: the model with an individual-level categorical predictor
-\item \code{"cor_mod"}: the model fitting separate axes and also the correlations among them
+\item \code{"simple"}: the basic model as described in the manuscript
+\item \code{"sans_dyadic"}: the basic model without the dyadic component
+\item \code{"cor_mod"}: the model fitting separate axes for each behavior
+and also the correlations among them
+\item \code{"indi_cat"}: the model with an individual-level
+categorical predictor
 }
 }
