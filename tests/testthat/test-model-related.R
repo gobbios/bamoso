@@ -4,10 +4,20 @@ while (!good_to_go) {
   x <- generate_data(n_beh = 4, n_ids = 16, dyad_sd = 1, indi_sd = 1, beh_intercepts = runif(4, -1, 1),
                      behav_types = sample(c("count", "prop", "dur_gamma", "dur_beta"), 4))
   if (!x$input_data$empty) good_to_go <- TRUE
+  x$standat$indi_cat_pred <- 0
+  x$standat$indi_covariate_pred <- 0
+  x$standat$dyad_cat_pred <- 0
+  x$standat$dyad_covariate_pred <- 0
+
 }
 
 standat <- x$standat
-suppressWarnings(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.9, show_messages = FALSE, refresh = 0)))
+suppressMessages(z <- capture.output(r <- sociality_model(standat,
+                                                          parallel_chains = 4,
+                                                          show_exceptions = FALSE,
+                                                          adapt_delta = 0.9,
+                                                          show_messages = FALSE,
+                                                          refresh = 0)))
 
 summary(r)
 

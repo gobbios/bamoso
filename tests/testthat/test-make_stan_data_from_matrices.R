@@ -1,4 +1,5 @@
 
+
 # occasionally, an empty matrix is produced (mostly in the gamma setting)
 good_to_go <- FALSE
 while (!good_to_go) {

@@ -2,13 +2,19 @@
 #'
 #' @param asso_table a 0/1 matrix where columns correspond to individuals and
 #'        rows to individual samples
-#' @param indi_cat_pred numeric or integer vector with dummy-coded individual-
+#' @param indi_cat_pred vector with binary individual-
 #'                      level predictor. Must contain one value per individual
 #'                      and can only reflect two categories (as 0's and 1's)!
 #'                      Examples are sex (female or not female), age (old or
 #'                      not old), residence status (resident or migrant).
-#'                      Default is \code{NULL} and if so, will be omitted
-#'                      in the output object.
+#'                      Default is \code{NULL} and if so, will occur as
+#'                      \code{NULL} in the output object.
+#' @param indi_covariate_pred vector with a continuous predictor
+#'          on individual level. Default is \code{NULL} and if so,
+#'          will occur as \code{NULL} in the output object.
+#' @param dyad_cat_pred,dyad_covariate_pred vector with dyad-level predictors.
+#'          Either binary, or continuous. Default is \code{NULL} and if so,
+#'          will occur as \code{NULL} in the output object.
 #'
 #' @details For now differences in sampling periods are ignored: each
 #'          individual is assumed to be present (theoretically observable)
@@ -31,8 +37,11 @@
 
 
 make_stan_data_from_association <- function(asso_table,
-                                            indi_cat_pred = NULL
-                                            ) {
+                                            indi_cat_pred = NULL,
+                                            indi_covariate_pred = NULL,
+                                            dyad_cat_pred = NULL,
+                                            dyad_covariate_pred = NULL
+) {
   # get dyadic counts
   ares <- asso_indices(asso_table)
 
@@ -91,6 +100,10 @@ make_stan_data_from_association <- function(asso_table,
               gamma_shape_n = 0,
               beta_shape_pos = 0,
               beta_shape_n = 0,
+              indi_cat_pred = 0, # binary
+              indi_covariate_pred = 0, # continuous
+              dyad_cat_pred = 0,
+              dyad_covariate_pred = 0,
               obseff = obseff_dat,
               obseff_int = apply(obseff_dat, 2, as.integer),
               prior_matrix = prior_matrix,
@@ -99,8 +112,19 @@ make_stan_data_from_association <- function(asso_table,
               behav_types = bdata,
               n_cors = 0
   )
+
   if (!is.null(indi_cat_pred)) {
     out$indi_cat_pred <- indi_cat_pred
   }
+  if (!is.null(indi_covariate_pred)) {
+    out$indi_covariate_pred <- indi_covariate_pred
+  }
+  if (!is.null(dyad_cat_pred)) {
+    out$dyad_cat_pred <- dyad_cat_pred
+  }
+  if (!is.null(dyad_covariate_pred)) {
+    out$dyad_covariate_pred <- dyad_covariate_pred
+  }
+
   out
 }

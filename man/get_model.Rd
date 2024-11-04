@@ -4,7 +4,7 @@
 \alias{get_model}
 \title{wrapper to provide model executable}
 \usage{
-get_model(type = c("simple", "indi_cat", "cor_mod", "sans_dyadic"))
+get_model(type = c("simple", "with_preds", "cor_mod", "sans_dyadic"))
 }
 \arguments{
 \item{type}{character, specify which model}
@@ -23,7 +23,7 @@ wrapper to provide model executable
 \item \code{"sans_dyadic"}: the basic model without the dyadic component
 \item \code{"cor_mod"}: the model fitting separate axes for each behavior
 and also the correlations among them
-\item \code{"indi_cat"}: the model with an individual-level
-categorical predictor
+\item \code{"with_preds"}: the model with an individual- and dyad-level
+predictor
 }
 }

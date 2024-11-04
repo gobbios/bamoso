@@ -1,8 +1,6 @@
 
 # test that model_summary produces sensible results given different combinations of behaviors and correlations
 
-
-
 test_that("model_summary works", {
   cors_indi <- matrix(c(1, 0.5, 0.5, -0.2, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 0.5, -0.2, 0.5, 0.5, 1), ncol = 4)
   cors_dyad <- matrix(c(1, 0.5, 0.5, -0.2, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 0.5, -0.2, 0.5, 0.5, 1), ncol = 4)

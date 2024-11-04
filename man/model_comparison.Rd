@@ -15,3 +15,14 @@ output of \code{\link[loo]{loo}} or \code{\link[loo]{loo_compare}}
 \description{
 model cross validation / comparison
 }
+\examples{
+\dontrun{
+library(loo)
+model1 <- fit_example_model(num = 1)
+model_comparison(model1)
+
+model2 <- fit_example_model(num = 2)
+model_comparison(list(mod1 = model1, mod2 = model2))
+}
+
+}

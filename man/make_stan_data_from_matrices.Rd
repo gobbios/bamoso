@@ -9,6 +9,9 @@ make_stan_data_from_matrices(
   behav_types = NULL,
   obseff = NULL,
   indi_cat_pred = NULL,
+  indi_covariate_pred = NULL,
+  dyad_cat_pred = NULL,
+  dyad_covariate_pred = NULL,
   correlations = FALSE
 )
 }
@@ -29,13 +32,21 @@ Can also be a list of such vectors or matrices, which then
 is mapped to each behavior (in that case this list needs to be
 of the same length as \code{mats}).}
 
-\item{indi_cat_pred}{numeric or integer vector with dummy-coded individual-
+\item{indi_cat_pred}{vector with binary individual-
 level predictor. Must contain one value per individual
 and can only reflect two categories (as 0's and 1's)!
 Examples are sex (female or not female), age (old or
 not old), residence status (resident or migrant).
-Default is \code{NULL} and if so, will be omitted
-in the output object.}
+Default is \code{NULL} and if so, will occur as
+\code{NULL} in the output object.}
+
+\item{indi_covariate_pred}{vector with a continuous predictor
+on individual level. Default is \code{NULL} and if so,
+will occur as \code{NULL} in the output object.}
+
+\item{dyad_cat_pred, dyad_covariate_pred}{vector with dyad-level predictors.
+Either binary, or continuous. Default is \code{NULL} and if so,
+will occur as \code{NULL} in the output object.}
 
 \item{correlations}{logical, default is \code{FALSE}. Flags whether
 subsequent model should estimate correlations between

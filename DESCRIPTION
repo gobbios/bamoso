@@ -1,6 +1,6 @@
 Package: bamoso
 Title: Bayesian modelling of animal social interactions
-Version: 0.2.8
+Version: 0.3.0
 Date: 2024-11-04
 Authors@R: 
     person(given = "Christof",

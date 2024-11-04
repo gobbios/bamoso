@@ -7,7 +7,7 @@ while (!good_to_go) {
 }
 
 standat <- x$standat
-suppressWarnings(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.8, show_exceptions = FALSE, show_messages = FALSE, refresh = 0)))
+suppressMessages(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.8, show_exceptions = FALSE, show_messages = FALSE, refresh = 0)))
 
 
 test_that("extract_samples returns the correct amount of columns", {
@@ -38,7 +38,7 @@ standat <- make_stan_data_from_matrices(list(A = x$processed$interaction_matrice
                                              C = x$processed$interaction_matrices[[3]], D = x$processed$interaction_matrices[[4]]),
                              correlations = TRUE)
 
-suppressWarnings(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.8, show_exceptions = FALSE, show_messages = FALSE, refresh = 0)))
+suppressMessages(z <- capture.output(r <- sociality_model(standat, parallel_chains = 4, adapt_delta = 0.8, show_exceptions = FALSE, show_messages = FALSE, refresh = 0)))
 
 
 test_that("extract_samples returns the correct amount of columns even with cors", {

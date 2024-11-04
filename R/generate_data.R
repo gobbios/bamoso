@@ -17,18 +17,20 @@
 #'                       intercepts on the linear scale for each behavior
 #'                       (the group-level average). Default is random
 #'                       (\code{rnorm(n_beh, -1, 2)}).
-#' @param indi_covariate_slope numeric, default is \code{NULL}. Fits an
-#'                             additional covariate effect on the
-#'                             gregariousness vector. (think: age)
-#' @param indi_cat_slope numeric, default is \code{NULL}. Fits an additional
-#'                       categorical effect on the gregariousness vector.
-#'                       (think: sex)
-#' @param dyadic_covariate_slope numeric, default is \code{NULL}. Fits an
-#'                               additional covariate effect on the
-#'                               affinity vector. (think: relatedness)
-#' @param dyadic_cat_slope numeric, default is \code{NULL}. Fits an additional
-#'                         categorical effect on the affinity vector.
-#'                         (think: same-sex?)
+#' @param indi_covariate_slope numeric, default is \code{0}. Fits an
+#'          additional covariate effect on the gregariousness vector.
+#'          (think: age)
+#' @param indi_cat_slope numeric, default is \code{0}. Fits an additional
+#'          categorical (binary!) effect on the gregariousness vector.
+#'          (think: sex) Note: this is coded as dummy-coded z-transformed
+#'          variable.
+#' @param dyad_covariate_slope numeric, default is \code{0}. Fits an
+#'          additional covariate effect on the affinity vector.
+#'          (think: relatedness)
+#' @param dyad_cat_slope numeric, default is \code{0}. Fits an additional
+#'          categorical (binary!) effect on the affinity vector.
+#'          (think: same-sex? yes/no) Note: this is coded as dummy-coded
+#'          z-transformed variable.
 #' @param prop_trials numeric of length 1 or 2, default is \code{100}, i.e.
 #'        per dyad there are 100 'trials' observed. If numeric of length 2,
 #'        each dyad gets its own number of trials ranging between the two values
@@ -37,16 +39,19 @@
 #'                        Dispersion parameter(s) for any behavior with
 #'                        \code{behav_types = "dur_gamma"}. See details.
 #' @param disp_pars_beta numeric of the same length as \code{n_beh}.
-#'                       Dispersion parameter(s) for any behavior with
-#'                       \code{behav_types = "dur_beta"}. See details.
+#'          Dispersion parameter(s) for any behavior with
+#'          \code{behav_types = "dur_beta"}. See details.
 #' @param count_obseff numeric of length 1 or 2, default is \code{1}, i.e.
-#'        per dyad there is 1 unit of observation effort (think 'hours').
-#'        If numeric of length 2, each dyad get its own observation effort,
-#'        sampled as uniform real between the two values. This is only relevant
-#'        for data generated as counts.
+#'          per dyad there is 1 unit of observation effort (think 'hours').
+#'          If numeric of length 2, each dyad get its own observation effort,
+#'          sampled as uniform real between the two values. This is only
+#'          relevant for data generated as counts.
 #' @param exact logical, default is \code{TRUE}: should the varying intercepts
 #'        for \code{indi_sd} and \code{dyad_sd} be rescaled so that they
 #'        have means of 0 and exact SD as supplied.
+#' @param force_z_predictors logical, force all (if there are any) covariates
+#'          (individual or dyad level features) to be z-standardized.
+#'          Default is TRUE.
 #'
 #' @details
 #' Currently, four data types/distributions via \code{behav_types}
@@ -103,16 +108,29 @@
 #' ex$processed$interaction_matrices[[1]]
 #' ex$processed$interaction_matrices[[2]]
 #'
+#' # with correlated behavior-specific axes
+#' cors_indi <- matrix(c(1.3, 0.7, 0.7, 1.3), ncol = 2)
+#' cors_dyad <- matrix(c(0.3, 0.3, 0.3, 0.3), ncol = 2)
+#' ex <- generate_data(n_ids = 7, n_beh = 2,
+#'                     behav_types = c("count", "dur_gamma"),
+#'                     indi_sd = cors_indi,
+#'                     dyad_sd = cors_dyad,
+#'                     disp_pars_gamma = c(0, 0.6),
+#'                     beh_intercepts = c(1.4, -0.7))
+#' # two interaction matrices:
+#' ex$processed$interaction_matrices[[1]]
+#' round(ex$processed$interaction_matrices[[2]], 3)
 
-# n_ids = 10
+
+# n_ids = 5
 # n_beh = 2
-# behav_types = c("count", "dur_gamma")
+# behav_types = c("count", "prop")
 # indi_sd = 1.2
 # dyad_sd = 0.8
-# indi_covariate_slope = NULL
-# indi_cat_slope = NULL
-# dyadic_covariate_slope = NULL
-# dyadic_cat_slope = NULL
+# indi_covariate_slope = 1
+# indi_cat_slope = 1
+# dyad_covariate_slope = 1
+# dyad_cat_slope = 1
 # disp_pars_gamma = c(0, 0.6)
 # disp_pars_beta = NULL
 # beh_intercepts = c(1.4, -0.7)
@@ -120,21 +138,25 @@
 # count_obseff = 1
 # exact = TRUE
 
+
+
+
 generate_data <- function(n_ids = NULL,
                           n_beh = 1,
                           behav_types = "count",
                           indi_sd = NULL,
                           dyad_sd = NULL,
-                          indi_covariate_slope = NULL,
-                          indi_cat_slope = NULL,
-                          dyadic_covariate_slope = NULL, # slope for additional dyadic parameter
-                          dyadic_cat_slope = NULL,
+                          indi_covariate_slope = 0,
+                          indi_cat_slope = 0,
+                          dyad_covariate_slope = 0, # slope for additional dyadic parameter
+                          dyad_cat_slope = 0,
                           disp_pars_gamma = NULL, # for durations as gamma
                           disp_pars_beta = NULL, # for durations as beta
                           beh_intercepts = NULL,
                           prop_trials = 100, # number of trials for binomial (proportion data)
                           count_obseff = 1, # observation effort for count data
-                          exact = TRUE) {
+                          exact = TRUE,
+                          force_z_predictors = TRUE) {
 
   if (isTRUE(n_ids < 4)) stop("we need at least four individuals", call. = FALSE)
 
@@ -142,27 +164,27 @@ generate_data <- function(n_ids = NULL,
   indi_intercept <- 0
   dyad_intercept <- 0
 
-  do_indi_covariate_slope <- TRUE
-  do_indi_cat_slope <- TRUE
-  do_dyadic_covariate_slope <- TRUE
-  do_dyadic_cat_slope <- TRUE
+  # do_indi_covariate_slope <- TRUE
+  # do_indi_cat_slope <- TRUE
+  # do_dyad_covariate_slope <- TRUE
+  # do_dyad_cat_slope <- TRUE
 
-  if (is.null(indi_covariate_slope)) {
-    indi_covariate_slope <- 0
-    do_indi_covariate_slope <- FALSE
-  }
-  if (is.null(indi_cat_slope)) {
-    indi_cat_slope <- 0
-    do_indi_cat_slope <- FALSE
-  }
-  if (is.null(dyadic_covariate_slope)) {
-    dyadic_covariate_slope <- 0
-    do_dyadic_covariate_slope <- FALSE
-  }
-  if (is.null(dyadic_cat_slope)) {
-    dyadic_cat_slope <- 0
-    do_dyadic_cat_slope <- FALSE
-  }
+  # if (is.null(indi_covariate_slope)) {
+  #   indi_covariate_slope <- 0
+  #   do_indi_covariate_slope <- FALSE
+  # }
+  # if (is.null(indi_cat_slope)) {
+  #   indi_cat_slope <- 0
+  #   do_indi_cat_slope <- FALSE
+  # }
+  # if (is.null(dyadic_covariate_slope)) {
+  #   dyadic_covariate_slope <- 0
+  #   do_dyadic_covariate_slope <- FALSE
+  # }
+  # if (is.null(dyadic_cat_slope)) {
+  #   dyadic_cat_slope <- 0
+  #   do_dyadic_cat_slope <- FALSE
+  # }
 
   if (is.null(n_ids)) n_ids <- sample(5:30, 1)
   if (is.null(n_beh)) n_beh <- sample(1:4, 1)
@@ -174,7 +196,8 @@ generate_data <- function(n_ids = NULL,
 
   # prelims
   n_dyads <- n_ids * (n_ids - 1) / 2
-  dyads <- t(combn(seq_len(n_ids), 2))
+  # dyads <- t(combn(seq_len(n_ids), 2))
+  dyads <- which(upper.tri(diag(n_ids)), arr.ind = TRUE)
 
   # some checks
   # dealing with correlated sociality scales
@@ -225,30 +248,55 @@ generate_data <- function(n_ids = NULL,
                           feature_cont = rnorm(n_ids)
   )
   # make sure that there are at least two for each category
-  sel <- sample(seq_len(n_ids), 4)
-  indi_data$feature_cat[sel] <- c(1, 1, 0, 0)
+  indi_data$feature_cat[sample(seq_len(n_ids), 4)] <- c(1, 1, 0, 0)
+  if (force_z_predictors) {
+    indi_data$feature_cat <- as.numeric(scale(indi_data$feature_cat))
+    indi_data$feature_cont <- as.numeric(scale(indi_data$feature_cont))
+  }
 
-  # indi_soc_vals_ini <- rnorm(n_ids, mean = 0, sd = indi_sd)
-  # if (exact) indi_soc_vals_ini <- indi_soc_vals_ini <- as.numeric(scale(indi_soc_vals_ini) * indi_sd)
-  # indi_soc_vals_ini <- rnorm_multi(n = n_ids, mu = rep(0, mulength), Sigma = matrix(indi_sd, ncol = mulength), empirical = exact)
-  indi_soc_vals_ini <- rnorm_multi(n = n_ids, mu = rep(0, mulength), Sigma = indi_sd_mat, empirical = exact)
-
-  indi_soc_vals <- indi_soc_vals_ini
-  if (do_indi_cat_slope) indi_soc_vals <- indi_soc_vals_ini + indi_cat_slope * indi_data$feature_cat
+  # individual sociality
+  indi_soc_vals_ini <- rnorm_multi(n = n_ids,
+                                   mu = rep(0, mulength),
+                                   Sigma = indi_sd_mat,
+                                   empirical = exact)
+  indi_soc_vals <- indi_soc_vals_ini +
+                   indi_cat_slope * indi_data$feature_cat +
+                   indi_covariate_slope * indi_data$feature_cont
   indi_data$indi_soc_vals_ini <- indi_soc_vals_ini
   indi_data$indi_soc_vals <- indi_soc_vals
+  # just checking:
+  # summary(lm(indi_soc_vals ~ 0 + feature_cat + feature_cont, indi_data))
+  # summary(lm(I(indi_soc_vals[, 1]) ~ 0 + feature_cat + feature_cont, indi_data))
 
+
+  # dyad-level data
+  dyad_data <- data.frame(dyad = seq_len(n_dyads),
+                          id1 = dyads[, 1],
+                          id2 = dyads[, 2],
+                          feature_cat = sample(c(0, 1), n_dyads, replace = TRUE),
+                          feature_cont = rnorm(n_dyads)
+  )
+  # make sure that there are at least two for each category
+  dyad_data$feature_cat[sample(seq_len(n_dyads), 4)] <- c(1, 1, 0, 0)
+  if (force_z_predictors) {
+    dyad_data$feature_cat <- as.numeric(scale(dyad_data$feature_cat))
+    dyad_data$feature_cont <- as.numeric(scale(dyad_data$feature_cont))
+  }
 
   # dyadic sociality
-  # dyad_soc_vals <- rnorm(n = n_dyads, mean = dyad_intercept, sd = dyad_sd)
-  #
-  # # exact distributions
-  # if (exact) {
-  #   dyad_soc_vals <- as.numeric(scale(dyad_soc_vals) * dyad_sd + dyad_intercept)
-  # }
-  # dyad_soc_vals <- rnorm_multi(n = n_dyads, mu = rep(0, mulength), Sigma = matrix(dyad_sd, ncol = mulength), empirical = exact)
-  dyad_soc_vals <- rnorm_multi(n = n_dyads, mu = rep(0, mulength), Sigma = dyad_sd_mat, empirical = exact)
+  dyad_soc_vals_ini <- rnorm_multi(n = n_dyads,
+                                   mu = rep(0, mulength),
+                                   Sigma = dyad_sd_mat,
+                                   empirical = exact)
+  # dyad_soc_vals <- dyad_soc_vals_ini
+  dyad_soc_vals <- dyad_soc_vals_ini +
+                   dyad_cat_slope * dyad_data$feature_cat +
+                   dyad_covariate_slope * dyad_data$feature_cont
+  dyad_data$dyad_soc_vals_ini <- dyad_soc_vals_ini
+  dyad_data$dyad_soc_vals <- dyad_soc_vals
 
+  # just checking:
+  # summary(lm(dyad_soc_vals ~ 0 + feature_cat + feature_cont, dyad_data))
 
   # select behavior scale types, currently:
   #  - count/frequency (as in poisson)
@@ -314,9 +362,9 @@ generate_data <- function(n_ids = NULL,
 
 
   # random dyadic covariate (think: relatedness)
-  dyadic_covariate_predictor <- as.numeric(scale(rnorm(n = n_dyads,
-                                                       mean = 0,
-                                                       sd = 1)))
+  # dyadic_covariate_predictor <- as.numeric(scale(rnorm(n = n_dyads,
+                                                       # mean = 0,
+                                                       # sd = 1)))
 
   # lp <- indi_intercept + dyad_intercept +
   #   0.5 * (indi_soc_vals[dyads[, 1]] + indi_soc_vals[dyads[, 2]]) +
@@ -327,8 +375,7 @@ generate_data <- function(n_ids = NULL,
   for (i in seq_len(n_beh)) {
     lp <- indi_intercept + dyad_intercept +
       sqrt(0.5) * (indi_soc_vals[dyads[, 1], colindex[i]] + indi_soc_vals[dyads[, 2], colindex[i]]) +
-      dyad_soc_vals[, colindex[i]] +
-      dyadic_covariate_slope * dyadic_covariate_predictor
+      dyad_soc_vals[, colindex[i]]
 
 
     lp_b <- lp + beh_intercepts[i]
@@ -476,11 +523,19 @@ generate_data <- function(n_ids = NULL,
                   n_cors = 0
                   )
 
-  if (do_indi_cat_slope) {
-    standat$indi_cat_pred <- indi_data$feature_cat
+  # if (do_indi_cat_slope) {
+  standat$indi_cat_pred       <- indi_data$feature_cat
+  # }
+  standat$indi_covariate_pred <- indi_data$feature_cont
+  standat$dyad_cat_pred       <- dyad_data$feature_cat
+  standat$dyad_covariate_pred <- dyad_data$feature_cont
+
+  if (is.null(names(behav_types))) {
+    names(standat$beh_names) <- paste0("behav_", LETTERS[seq_len(n_beh)])
+  } else {
+    names(standat$beh_names) <- names(behav_types)
   }
 
-  names(standat$beh_names) <- paste0("behav_", LETTERS[seq_len(n_beh)])
 
 
   if (length(indi_sd) > 1) {
@@ -491,17 +546,23 @@ generate_data <- function(n_ids = NULL,
        input_data = list(behav_type = btypes,
                          empty = empty,
                          indi_data = indi_data,
-                         indi_soc_vals = indi_soc_vals,
-                         indi_sums = 0.5 * (indi_soc_vals[dyads[, 1]] +
-                                              indi_soc_vals[dyads[, 2]]),
-                         dyad_soc_vals = dyad_soc_vals,
+                         # indi_soc_vals = indi_soc_vals,
+                         indi_sums = sqrt(0.5) * (indi_soc_vals[dyads[, 1]] +
+                                                  indi_soc_vals[dyads[, 2]]),
+                         # dyad_soc_vals = dyad_soc_vals,
                          dyads = dyads,
                          indi_sd = indi_sd,
-                         indi_intercept = indi_intercept,
+                         # indi_intercept = indi_intercept,
                          dyad_sd = dyad_sd,
-                         dyad_intercept = dyad_intercept,
-                         dyadic_covariate_predictor = dyadic_covariate_predictor,
-                         dyadic_covariate_slope = dyadic_covariate_slope,
+                         # dyad_intercept = dyad_intercept,
+                         # dyadic_covariate_predictor = dyadic_covariate_predictor,
+                         dyad_data = dyad_data,
+                         indi_cat_slope = indi_cat_slope,
+                         indi_covariate_slope = indi_covariate_slope,
+                         # indi_pred_intercept = indi_pred_intercept,
+                         dyad_cat_slope = dyad_cat_slope,
+                         dyad_covariate_slope = dyad_covariate_slope,
+                         # dyad_pred_intercept = dyad_pred_intercept,
                          disp_pars_gamma = disp_pars_gamma,
                          disp_pars_beta = disp_pars_beta,
                          beh_intercepts = beh_intercepts,

@@ -13,13 +13,20 @@
 #'                    \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 #'                    At its default all behaviors are considered
 #'                    to be \code{"count"}.
-#' @param indi_cat_pred numeric or integer vector with dummy-coded individual-
+#' @param indi_cat_pred vector with binary individual-
 #'                      level predictor. Must contain one value per individual
 #'                      and can only reflect two categories (as 0's and 1's)!
 #'                      Examples are sex (female or not female), age (old or
 #'                      not old), residence status (resident or migrant).
-#'                      Default is \code{NULL} and if so, will be omitted
-#'                      in the output object.
+#'                      Default is \code{NULL} and if so, will occur as
+#'                      \code{NULL} in the output object.
+#' @param indi_covariate_pred vector with a continuous predictor
+#'          on individual level. Default is \code{NULL} and if so,
+#'          will occur as \code{NULL} in the output object.
+#' @param dyad_cat_pred,dyad_covariate_pred vector with dyad-level predictors.
+#'          Either binary, or continuous. Default is \code{NULL} and if so,
+#'          will occur as \code{NULL} in the output object.
+#'
 #' @param correlations logical, default is \code{FALSE}. Flags whether
 #'                     subsequent model should estimate correlations between
 #'                     individuals and dyadic axes. This only makes sense if
@@ -97,6 +104,9 @@ make_stan_data_from_matrices <- function(mats,
                                          behav_types = NULL,
                                          obseff = NULL,
                                          indi_cat_pred = NULL,
+                                         indi_covariate_pred = NULL,
+                                         dyad_cat_pred = NULL,
+                                         dyad_covariate_pred = NULL,
                                          correlations = FALSE
                                          ) {
   # convert obseff to list of matrices
@@ -141,7 +151,8 @@ make_stan_data_from_matrices <- function(mats,
   if (!is.null(indi_cat_pred)) {
     indi_cat_pred <- na.omit(indi_cat_pred)
     if (length(indi_cat_pred) != n_ids) {
-      stop("individual-level predictor doesn't have correct length", call. = FALSE)
+      stop("individual-level predictor doesn't have correct length",
+           call. = FALSE)
     }
   }
 
@@ -316,6 +327,11 @@ make_stan_data_from_matrices <- function(mats,
               gamma_shape_n = sum(gamma_shape_pos > 0),
               beta_shape_pos = beta_shape_pos_mod,
               beta_shape_n = sum(beta_shape_pos > 0),
+              # individual/dyad level predictors:
+              indi_cat_pred = 0, # binary
+              indi_covariate_pred = 0, # continuous
+              dyad_cat_pred = 0,
+              dyad_covariate_pred = 0,
               prior_matrix = prior_matrix,
               id_codes = vec,
               beh_names = vec_behaviors,
@@ -324,6 +340,19 @@ make_stan_data_from_matrices <- function(mats,
 
   if (!is.null(indi_cat_pred)) {
     out$indi_cat_pred <- indi_cat_pred
+    standardization_check_predictors(indi_cat_pred, "indi_cat_pred")
+  }
+  if (!is.null(indi_covariate_pred)) {
+    out$indi_covariate_pred <- indi_covariate_pred
+    standardization_check_predictors(indi_covariate_pred, "indi_covariate_pred")
+  }
+  if (!is.null(dyad_cat_pred)) {
+    out$dyad_cat_pred <- dyad_cat_pred
+    standardization_check_predictors(dyad_cat_pred, "dyad_cat_pred")
+  }
+  if (!is.null(dyad_covariate_pred)) {
+    out$dyad_covariate_pred <- dyad_covariate_pred
+    standardization_check_predictors(dyad_covariate_pred, "dyad_covariate_pred")
   }
 
   if (correlations) {
@@ -333,3 +362,14 @@ make_stan_data_from_matrices <- function(mats,
 
   out
 }
+
+
+standardization_check_predictors <- function(x, kind) {
+  x_mean <- abs(mean(x)) > 0.0001
+  x_sd <- abs(1 - sd(x)) > 0.0001
+  if (x_mean || x_sd) {
+    warning("the variable ", shQuote(kind), " is not standardized (mean != 0 and/or sd != 1)", call. = FALSE)
+  }
+  NULL
+}
+

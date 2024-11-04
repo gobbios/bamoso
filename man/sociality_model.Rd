@@ -15,10 +15,9 @@ to \code{\link{make_stan_data_from_matrices}} or
 fit the simple model without the dyadic components.}
 
 \item{...}{further arguments for \code{\link[cmdstanr]{sample}} (typically
-\code{parallel_chains}, \code{refresh},
-\code{iter_warmup}, \code{iter_sampling},
-\code{seed}, \code{adapt_delta},
-and/or \code{step_size})}
+\code{chains}, \code{parallel_chains}, \code{refresh},
+\code{iter_warmup}, \code{iter_sampling}, \code{seed},
+\code{adapt_delta}, and/or \code{step_size})}
 }
 \value{
 a list (of class \code{dyadicmodel}) which contains the standata
@@ -65,4 +64,6 @@ res <- sociality_model(standat = standat, parallel_chains = 4)
 res$mod_res$summary("cors_indi")
 res$mod_res$summary("cors_dyad")
 }
+
+x <- generate_data(n_ids = 5, indi_covariate_slope = 0.7, beh_intercepts = 2)
 }

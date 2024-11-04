@@ -1,6 +1,6 @@
 x <- sim_data_whitehead2015(n_ind = 12, n_periods = 50, ignore_temporal = TRUE)
 assos <- x$assolist
-head(assos)
+# head(assos)
 
 standat <- make_stan_data_from_association(assos)
 

@@ -65,7 +65,7 @@ extract_samples <- function(mod_res,
                                      "dyad_vals",
                                      "indi_cors",
                                      "dyad_cors"
-                                     ),
+                            ),
                             axis = 1) {
 
   standat <- mod_res$standat
@@ -86,8 +86,12 @@ extract_samples <- function(mod_res,
 
   if ("indi_cors" %in% what) {
     bnames <- names(standat$beh_names)
-    xindex <- which(upper.tri(matrix(ncol = standat$n_beh, nrow = standat$n_beh)), arr.ind = TRUE)
-    xnames <- apply(xindex, 1, function(x) paste(bnames[x[1]], bnames[x[2]], sep = "_X_"))
+    xindex <- which(upper.tri(matrix(ncol = standat$n_beh,
+                                     nrow = standat$n_beh)),
+                    arr.ind = TRUE)
+    xnames <- apply(xindex, 1, function(x) {
+      paste(bnames[x[1]], bnames[x[2]], sep = "_X_")
+      })
 
     x <- mod_res$draws(variables = "cors_indi", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = standat$n_cors)
@@ -97,8 +101,12 @@ extract_samples <- function(mod_res,
 
   if ("dyad_cors" %in% what) {
     bnames <- names(standat$beh_names)
-    xindex <- which(upper.tri(matrix(ncol = standat$n_beh, nrow = standat$n_beh)), arr.ind = TRUE)
-    xnames <- apply(xindex, 1, function(x) paste(bnames[x[1]], bnames[x[2]], sep = "_X_"))
+    xindex <- which(upper.tri(matrix(ncol = standat$n_beh,
+                                     nrow = standat$n_beh)),
+                    arr.ind = TRUE)
+    xnames <- apply(xindex, 1, function(x) {
+      paste(bnames[x[1]], bnames[x[2]], sep = "_X_")
+    })
 
     x <- mod_res$draws(variables = "cors_dyad", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = standat$n_cors)

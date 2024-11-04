@@ -10,16 +10,17 @@ generate_data(
   behav_types = "count",
   indi_sd = NULL,
   dyad_sd = NULL,
-  indi_covariate_slope = NULL,
-  indi_cat_slope = NULL,
-  dyadic_covariate_slope = NULL,
-  dyadic_cat_slope = NULL,
+  indi_covariate_slope = 0,
+  indi_cat_slope = 0,
+  dyad_covariate_slope = 0,
+  dyad_cat_slope = 0,
   disp_pars_gamma = NULL,
   disp_pars_beta = NULL,
   beh_intercepts = NULL,
   prop_trials = 100,
   count_obseff = 1,
-  exact = TRUE
+  exact = TRUE,
+  force_z_predictors = TRUE
 )
 }
 \arguments{
@@ -41,21 +42,23 @@ positive. Default is a random value
 (\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
 See details.}
 
-\item{indi_covariate_slope}{numeric, default is \code{NULL}. Fits an
-additional covariate effect on the
-gregariousness vector. (think: age)}
+\item{indi_covariate_slope}{numeric, default is \code{0}. Fits an
+additional covariate effect on the gregariousness vector.
+(think: age)}
 
-\item{indi_cat_slope}{numeric, default is \code{NULL}. Fits an additional
-categorical effect on the gregariousness vector.
-(think: sex)}
+\item{indi_cat_slope}{numeric, default is \code{0}. Fits an additional
+categorical (binary!) effect on the gregariousness vector.
+(think: sex) Note: this is coded as dummy-coded z-transformed
+variable.}
 
-\item{dyadic_covariate_slope}{numeric, default is \code{NULL}. Fits an
-additional covariate effect on the
-affinity vector. (think: relatedness)}
+\item{dyad_covariate_slope}{numeric, default is \code{0}. Fits an
+additional covariate effect on the affinity vector.
+(think: relatedness)}
 
-\item{dyadic_cat_slope}{numeric, default is \code{NULL}. Fits an additional
-categorical effect on the affinity vector.
-(think: same-sex?)}
+\item{dyad_cat_slope}{numeric, default is \code{0}. Fits an additional
+categorical (binary!) effect on the affinity vector.
+(think: same-sex? yes/no) Note: this is coded as dummy-coded
+z-transformed variable.}
 
 \item{disp_pars_gamma}{numeric of the same length as \code{n_beh}.
 Dispersion parameter(s) for any behavior with
@@ -78,12 +81,16 @@ supplied. Only relevant for data generated as proportions.}
 \item{count_obseff}{numeric of length 1 or 2, default is \code{1}, i.e.
 per dyad there is 1 unit of observation effort (think 'hours').
 If numeric of length 2, each dyad get its own observation effort,
-sampled as uniform real between the two values. This is only relevant
-for data generated as counts.}
+sampled as uniform real between the two values. This is only
+relevant for data generated as counts.}
 
 \item{exact}{logical, default is \code{TRUE}: should the varying intercepts
 for \code{indi_sd} and \code{dyad_sd} be rescaled so that they
 have means of 0 and exact SD as supplied.}
+
+\item{force_z_predictors}{logical, force all (if there are any) covariates
+(individual or dyad level features) to be z-standardized.
+Default is TRUE.}
 }
 \value{
 a list with three named items, which are lists too:
@@ -135,4 +142,16 @@ ex <- generate_data(n_ids = 7, n_beh = 2,
 ex$processed$interaction_matrices[[1]]
 ex$processed$interaction_matrices[[2]]
 
+# with correlated behavior-specific axes
+cors_indi <- matrix(c(1.3, 0.7, 0.7, 1.3), ncol = 2)
+cors_dyad <- matrix(c(0.3, 0.3, 0.3, 0.3), ncol = 2)
+ex <- generate_data(n_ids = 7, n_beh = 2,
+                    behav_types = c("count", "dur_gamma"),
+                    indi_sd = cors_indi,
+                    dyad_sd = cors_dyad,
+                    disp_pars_gamma = c(0, 0.6),
+                    beh_intercepts = c(1.4, -0.7))
+# two interaction matrices:
+ex$processed$interaction_matrices[[1]]
+round(ex$processed$interaction_matrices[[2]], 3)
 }
