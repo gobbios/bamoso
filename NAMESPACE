@@ -3,6 +3,7 @@
 S3method(summary,dyadicmodel)
 export(asso_indices)
 export(check_data)
+export(cor_plot)
 export(extract_samples)
 export(fit_example_model)
 export(generate_data)
