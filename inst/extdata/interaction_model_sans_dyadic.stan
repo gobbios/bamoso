@@ -83,8 +83,10 @@ model {
   }
   indi_soc_vals_z ~ normal(0, 1);
   // dyad_soc_vals_z ~ normal(0, 1);
-  indi_soc_sd ~ student_t(3, 0, 1);
+  // indi_soc_sd ~ student_t(3, 0, 1);
   // dyad_soc_sd ~ student_t(3, 0, 1);
+  indi_soc_sd ~ exponential(2);
+  // dyad_soc_sd ~ exponential(2);
 }
 
 generated quantities {

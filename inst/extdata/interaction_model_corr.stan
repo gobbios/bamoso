@@ -108,8 +108,10 @@ model {
     indi_soc_vals_z[i, ] ~ normal(0, 1);
     dyad_soc_vals_z[i, ] ~ normal(0, 1);
   }
-  indi_soc_sd ~ student_t(3, 0, 1);
-  dyad_soc_sd ~ student_t(3, 0, 1);
+  // indi_soc_sd ~ student_t(3, 0, 1);
+  // dyad_soc_sd ~ student_t(3, 0, 1);
+  indi_soc_sd ~ exponential(2);
+  dyad_soc_sd ~ exponential(2);
   chol_indi_dims ~ lkj_corr_cholesky(2);
   chol_dyad_dims ~ lkj_corr_cholesky(2);
 }

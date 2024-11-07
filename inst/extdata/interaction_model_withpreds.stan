@@ -61,9 +61,6 @@ transformed parameters {
   if (do_indi_covariate == 1) {
     indi_aux = indi_aux + indi_covariate_eff * indi_covariate_pred;
   }
-  if (do_indi_cat == 1 || do_indi_covariate == 1) {
-    // indi_aux = indi_aux + indi_intercept;
-  }
   indi_soc_vals = (indi_soc_sd * indi_soc_vals_z) + indi_aux;
 
 
@@ -72,9 +69,6 @@ transformed parameters {
   }
   if (do_dyad_covariate == 1) {
     dyad_aux = dyad_aux + dyad_covariate_eff * dyad_covariate_pred;
-  }
-  if (do_dyad_cat == 1 || do_dyad_covariate == 1) {
-    // dyad_aux = dyad_aux + dyad_intercept;
   }
   dyad_soc_vals = (dyad_soc_sd * dyad_soc_vals_z) + dyad_aux;
 
@@ -118,8 +112,10 @@ model {
   }
   indi_soc_vals_z ~ normal(0, 1);
   dyad_soc_vals_z ~ normal(0, 1);
-  indi_soc_sd ~ student_t(3, 0, 1);
-  dyad_soc_sd ~ student_t(3, 0, 1);
+  // indi_soc_sd ~ student_t(3, 0, 1);
+  // dyad_soc_sd ~ student_t(3, 0, 1);
+  indi_soc_sd ~ exponential(2);
+  dyad_soc_sd ~ exponential(2);
   indi_cat_eff ~ normal(0, 0.5);
   indi_covariate_eff ~ normal(0, 0.5);
   dyad_cat_eff ~ normal(0, 0.5);
