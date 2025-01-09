@@ -15,7 +15,7 @@
 
 pp_model_stat <- function(mod_res,
                           xvar = 1,
-                          stat = c("mean", "min", "max", "iqr", "range_width"),
+                          stat = c("mean", "median", "min", "max", "iqr", "range_width"),
                           xlim = NULL,
                           ...) {
 
@@ -38,6 +38,14 @@ pp_model_stat <- function(mod_res,
 
 
   p <- p[, grepl(paste0(",", xvar, "\\]", collapse = ""), colnames(p))]
+
+  # remove overflow cases if any
+  xtest <- !is.na(rowSums(p))
+  if (any(xtest)) {
+    if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
+    p <- p[xtest, , drop = FALSE]
+  }
+
   if (stat == "mean") {
     p <- rowMeans(p)
     x <- mean(x)
@@ -49,6 +57,10 @@ pp_model_stat <- function(mod_res,
   if (stat == "max") {
     p <- apply(p, 1, max)
     x <- max(x)
+  }
+  if (stat == "median") {
+    p <- apply(p, 1, median)
+    x <- median(x)
   }
   if (stat == "range_width") {
     p <- apply(p, 1, max) - apply(p, 1, min)

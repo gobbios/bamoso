@@ -7,7 +7,7 @@
 pp_model_stat(
   mod_res,
   xvar = 1,
-  stat = c("mean", "min", "max", "iqr", "range_width"),
+  stat = c("mean", "median", "min", "max", "iqr", "range_width"),
   xlim = NULL,
   ...
 )

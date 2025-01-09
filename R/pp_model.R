@@ -46,6 +46,12 @@ pp_model <- function(mod_res,
   p <- as.matrix(mod_res$draws(variables = "interactions_pred",
                                format = "matrix"))
   p <- p[, grepl(paste0(",", xvar, "\\]", collapse = ""), colnames(p))]
+  # remove overflow cases if any
+  xtest <- !is.na(rowSums(p))
+  if (any(xtest)) {
+    if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
+    p <- p[xtest, , drop = FALSE]
+  }
 
   # deal with individual selection
   if (!is.null(selected_id)) {

@@ -4,7 +4,7 @@
 \alias{sociality_model}
 \title{fit dyadic relationship model to one or more interaction matrices}
 \usage{
-sociality_model(standat, sans_dyadic = FALSE, ...)
+sociality_model(standat, sans_dyadic = FALSE, prior_sim = FALSE, ...)
 }
 \arguments{
 \item{standat}{stan data list (typically the result of a call

@@ -59,6 +59,13 @@ pp_model_dens <- function(mod_res,
   }
 
   p <- p[, grepl(paste0(",", xvar, "\\]", collapse = ""), colnames(p))]
+  # remove overflow cases if any
+  xtest <- !is.na(rowSums(p))
+  if (any(xtest)) {
+    if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
+    p <- p[xtest, , drop = FALSE]
+  }
+
   p <- p[sample(nrow(p), n_draws), ]
 
   # deal with individual selection

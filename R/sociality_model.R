@@ -58,10 +58,12 @@
 
 sociality_model <- function(standat,
                             sans_dyadic = FALSE,
+                            prior_sim = FALSE,
                             ...) {
 
   # determine which model...
   modeltype <- "simple" # default
+  standat$prior_only <- as.integer(prior_sim)
 
   # detect predictors if present
   flag_indi_cat_pred <- as.integer(!isTRUE(standat$indi_cat_pred == 0))
