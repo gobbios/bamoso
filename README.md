@@ -166,7 +166,7 @@ on the right only reflect a subset of 10 dyads.
 
 ## Acknowledgments
 
-This project was funded by the German Research Foundation via an RTG
-grant:
+This work was supported by Deutsche Forschungsgemeinschaft, Grant/Award
+Number: 254142454 / GRK 2070.
 
 <img src="man/figures/RTG-LogoCYMK300.png" width="50%" style="display: block; margin: auto;" />

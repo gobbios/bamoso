@@ -154,8 +154,7 @@ ridge_plot(res, greg = FALSE, sel_subset = 10:20, vert_exp = 15)
 
 ## Acknowledgments
 
-This project was funded by the German Research Foundation via an RTG grant:
-
+This work was supported by Deutsche Forschungsgemeinschaft, Grant/Award Number: 254142454 / GRK 2070.
 
 ```{r, echo=FALSE, out.width="50%", fig.align='center'}
 knitr::include_graphics("man/figures/RTG-LogoCYMK300.png")
