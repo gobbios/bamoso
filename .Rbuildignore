@@ -6,3 +6,4 @@ data-raw/
 ^Meta$
 intro.pdf
 dump/
+^README\.Rmd$
