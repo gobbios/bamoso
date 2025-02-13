@@ -48,4 +48,27 @@ test_that("dimension mismatches are detected", {
 })
 
 
-
+test_that("stan data from simulated data contains the correct list elements", {
+  x <- suppressWarnings(generate_data(n_beh = 2, n_ids = 12, dyad_sd = 1, indi_sd = 1, beh_intercepts = runif(2, 0, 10),
+                                      behav_types = c("count", "prop")))
+  standat <- x$standat
+  expect_true("id1" %in% names(standat))
+  expect_true("id2" %in% names(standat))
+  expect_true("interactions" %in% names(standat))
+  expect_true("interactions_cont" %in% names(standat))
+  expect_true("n_beh" %in% names(standat))
+  expect_true("n_ids" %in% names(standat))
+  expect_true("n_dyads" %in% names(standat))
+  expect_true("dyads_navi" %in% names(standat))
+  expect_true("gamma_shape_pos" %in% names(standat))
+  expect_true("gamma_shape_n" %in% names(standat))
+  expect_true("beta_shape_pos" %in% names(standat))
+  expect_true("beta_shape_n" %in% names(standat))
+  expect_true("obseff" %in% names(standat))
+  expect_true("obseff_int" %in% names(standat))
+  expect_true("prior_matrix" %in% names(standat))
+  expect_true("prior_matrix2" %in% names(standat))
+  expect_true("id_codes" %in% names(standat))
+  expect_true("beh_names" %in% names(standat))
+  expect_true("behav_types" %in% names(standat))
+})

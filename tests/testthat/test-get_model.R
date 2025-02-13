@@ -5,22 +5,21 @@ library(bamoso)
 
 x <- generate_data(n_ids = 5, behav_types = "prop", beh_intercepts = 0.7)
 standat <- x$standat
-# if predictor data is present, fit the with_preds model
+# if predictor data is absent, fit the simple model
 suppressMessages(r1 <- sociality_model(standat, chains = 1, refresh = 0, show_exceptions = FALSE))
 
 # if predictor data is present, fit the with_preds model
-standat$indi_cat_pred <- 0
-standat$indi_covariate_pred <- 0
-standat$dyad_cat_pred <- 0
+x <- generate_data(n_ids = 5, behav_types = "prop", beh_intercepts = 0.7, indi_cat_slope = 1)
+standat <- x$standat
 suppressMessages(r2 <- sociality_model(standat, chains = 1, refresh = 0, show_exceptions = FALSE))
 
 # if no predictor data is present, fit the simple model
-standat$dyad_covariate_pred <- 0
+standat$indi_cat_pred <- NULL
 suppressMessages(r3 <- sociality_model(standat, chains = 1, refresh = 0, show_exceptions = FALSE))
 
 
 test_that("model uses predictor data appropriately", {
-  expect_true(r1$modeltype == "with_preds")
+  expect_true(r1$modeltype == "simple")
   expect_true(r2$modeltype == "with_preds")
   expect_true(r3$modeltype == "simple")
 })

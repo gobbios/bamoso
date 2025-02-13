@@ -69,6 +69,7 @@ test_that("make_stan_data_from_matrices contains the correct list elements", {
   expect_true("obseff" %in% names(standat))
   expect_true("obseff_int" %in% names(standat))
   expect_true("prior_matrix" %in% names(standat))
+  expect_true("prior_matrix2" %in% names(standat))
   expect_true("id_codes" %in% names(standat))
   expect_true("beh_names" %in% names(standat))
   expect_true("behav_types" %in% names(standat))

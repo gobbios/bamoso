@@ -26,9 +26,17 @@ for (i in 1:nrow(res)) {
 
 test_that("data items are present in both simulated output and make_stan_data_from_matrices", {
   expect_true(all(res$is_there))
+  expect_true(all(res$is_equal))
 })
 
-# and again with covariates
+
+# and again with covariates ----
+behav_types <- sample(c("count", "prop", "dur_gamma", "dur_beta"), 2)
+x <- generate_data(n_beh = 2, n_ids = 6, beh_intercepts = runif(2, -1, 1),
+                   behav_types = behav_types, indi_covariate_slope = 0, dyad_covariate_slope = 0, indi_cat_slope = 0, dyad_cat_slope = 0)
+mats <- x$processed$interaction_matrices
+s1 <- x$standat
+
 s2 <- make_stan_data_from_matrices(mats = mats, behav_types = behav_types,
                                    indi_cat_pred = x$input_data$indi_data$feature_cat,
                                    indi_covariate_pred = x$input_data$indi_data$feature_cont,
@@ -39,7 +47,6 @@ s2 <- make_stan_data_from_matrices(mats = mats, behav_types = behav_types,
 # do some rounding to avoid false positives
 s1$interactions_cont <- round(s1$interactions_cont, 15)
 s2$interactions_cont <- round(s2$interactions_cont, 15)
-
 
 res <- data.frame(list_item = names(s1), is_there = FALSE, is_equal = NA)
 
@@ -87,10 +94,8 @@ s2 <- make_stan_data_from_matrices(mats = mats, behav_types = behav_types, indi_
 res <- data.frame(list_item = names(s1), is_there = FALSE, is_equal = NA)
 
 for (i in 1:nrow(res)) {
-  if (res$list_item[i] %in% names(s2)) {
     res$is_there[i] <- TRUE
     res$is_equal[i] <- identical(s1[[res$list_item[i]]], s2[[res$list_item[i]]])
-  }
 }
 
 
@@ -119,15 +124,34 @@ test_that("data items are present in both simulated output and make_stan_data_fr
 behav_types <- sample(c("count", "prop"), 2, TRUE)
 x <- generate_data(n_beh = 2, n_ids = 5, beh_intercepts = runif(2, -1, 1),
                    behav_types = behav_types)
-x$standat$indi_cat_pred <- 0
-x$standat$indi_covariate_pred <- 0
-x$standat$dyad_cat_pred <- 0
-x$standat$dyad_covariate_pred <- 0
 
 mats <- x$processed$interaction_matrices
-
 s1 <- x$standat
 s2 <- make_stan_data_from_matrices(mats = mats, behav_types = behav_types)
+names(s1);names(s2)
+
+suppressMessages(r1 <- sociality_model(s1, chains = 1, iter_sampling = 200, seed = 1, refresh = 0))
+suppressMessages(r2 <- sociality_model(s2, chains = 1, iter_sampling = 200, seed = 1, refresh = 0))
+
+r1 <- round(c(r1$mod_res$draws("indi_soc_sd", format = "draws_matrix")), 4)
+r2 <- round(c(r2$mod_res$draws("indi_soc_sd", format = "draws_matrix")), 4)
+
+test_that("model output is the same regardless of standat origin", {
+  expect_true(all(r1 == r2))
+})
+
+#  model fit comparison with predictors ----
+
+behav_types <- sample(c("count", "prop"), 2, TRUE)
+x <- generate_data(n_beh = 2, n_ids = 5, beh_intercepts = runif(2, -1, 1),
+                   behav_types = behav_types, indi_covariate_slope = 0.1, dyad_cat_slope = -0.2)
+
+mats <- x$processed$interaction_matrices
+s1 <- x$standat
+s2 <- make_stan_data_from_matrices(mats = mats, behav_types = behav_types,
+                                   indi_covariate_pred = x$input_data$indi_data$feature_cont,
+                                   dyad_cat_pred = x$input_data$dyad_data$feature_cat)
+names(s1);names(s2)
 
 suppressMessages(r1 <- sociality_model(s1, chains = 1, iter_sampling = 200, seed = 1, refresh = 0))
 suppressMessages(r2 <- sociality_model(s2, chains = 1, iter_sampling = 200, seed = 1, refresh = 0))
