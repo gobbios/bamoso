@@ -1,10 +1,14 @@
 #' fit dyadic relationship model to one or more interaction matrices
 #'
 #' @param standat stan data list (typically the result of a call
-#'                 to \code{\link{make_stan_data_from_matrices}} or
-#'                 \code{\link{make_stan_data_from_association}})
+#'          to \code{\link{make_stan_data_from_matrices}} or
+#'          \code{\link{make_stan_data_from_association}})
 #' @param sans_dyadic logical (default is \code{FALSE}). If \code{TRUE}
-#'                    fit the simple model without the dyadic components.
+#'          fit the simple model without the dyadic components.
+#' @param prior_sim logical, run only prior sims (default
+#'          is \code{FALSE})
+#' @param silent logical, try to suppress *all* output (default
+#'          is \code{FALSE})
 #' @param ... further arguments for \code{\link[cmdstanr]{sample}} (typically
 #'          \code{chains}, \code{parallel_chains}, \code{refresh},
 #'          \code{iter_warmup}, \code{iter_sampling}, \code{seed},
@@ -59,6 +63,7 @@
 sociality_model <- function(standat,
                             sans_dyadic = FALSE,
                             prior_sim = FALSE,
+                            silent = FALSE,
                             ...) {
 
   # determine which model...
@@ -66,10 +71,14 @@ sociality_model <- function(standat,
   standat$prior_only <- as.integer(prior_sim)
 
   # detect predictors if present
-  flag_indi_cat_pred <- as.integer(!isTRUE(standat$indi_cat_pred == 0))
-  flag_indi_covariate_pred <- as.integer(!isTRUE(standat$indi_covariate_pred == 0))
-  flag_dyad_cat_pred <- as.integer(!isTRUE(standat$dyad_cat_pred == 0))
-  flag_dyad_covariate_pred <- as.integer(!isTRUE(standat$dyad_covariate_pred == 0))
+  flag_indi_cat_pred <- "indi_cat_pred" %in% names(standat)
+  flag_indi_covariate_pred <- "indi_covariate_pred" %in% names(standat)
+  flag_dyad_cat_pred <- "dyad_cat_pred" %in% names(standat)
+  flag_dyad_covariate_pred <- "dyad_covariate_pred" %in% names(standat)
+  # flag_indi_cat_pred <- as.integer(!isTRUE(standat$indi_cat_pred == 0))
+  # flag_indi_covariate_pred <- as.integer(!isTRUE(standat$indi_covariate_pred == 0))
+  # flag_dyad_cat_pred <- as.integer(!isTRUE(standat$dyad_cat_pred == 0))
+  # flag_dyad_covariate_pred <- as.integer(!isTRUE(standat$dyad_covariate_pred == 0))
 
   if (sum(flag_indi_cat_pred, flag_indi_covariate_pred,
           flag_dyad_cat_pred, flag_dyad_covariate_pred) > 0) {
@@ -94,10 +103,7 @@ sociality_model <- function(standat,
     if (!flag_dyad_covariate_pred) {
       standat$dyad_covariate_pred <- rep(0, standat$n_dyads)
     }
-
-
   }
-
 
   if (standat$n_cor > 0) {
     modeltype <- "cor_mod"
@@ -107,12 +113,20 @@ sociality_model <- function(standat,
     modeltype <- "sans_dyadic"
   }
 
-  if (interactive() && modeltype != "simple") {
-    cat("fitting the following non-standard model:", shQuote(modeltype), "\n")
+  if (!silent) {
+    if (interactive() && modeltype != "simple") {
+      cat("fitting the following non-standard model:", shQuote(modeltype), "\n")
+    }
   }
 
-  mod <- get_model(type = modeltype)
-  res <- mod$sample(data = standat, ...)
+  if (silent) {
+    swallow1 <- capture.output(suppressMessages(mod <- get_model(type = modeltype)))
+    swallow2 <- capture.output(suppressMessages(res <- mod$sample(data = standat, ...)))
+  } else {
+    mod <- get_model(type = modeltype)
+    res <- mod$sample(data = standat, ...)
+  }
+
   out <- list(standat = standat, mod_res = res, modeltype = modeltype)
   class(out) <- "dyadicmodel"
   out

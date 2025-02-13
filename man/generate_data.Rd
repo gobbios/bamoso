@@ -10,13 +10,14 @@ generate_data(
   behav_types = "count",
   indi_sd = NULL,
   dyad_sd = NULL,
-  indi_covariate_slope = 0,
-  indi_cat_slope = 0,
-  dyad_covariate_slope = 0,
-  dyad_cat_slope = 0,
+  indi_covariate_slope = NULL,
+  indi_cat_slope = NULL,
+  dyad_covariate_slope = NULL,
+  dyad_cat_slope = NULL,
   disp_pars_gamma = NULL,
   disp_pars_beta = NULL,
   beh_intercepts = NULL,
+  beh_intercepts_add = NULL,
   prop_trials = 100,
   count_obseff = 1,
   exact = TRUE,
@@ -30,53 +31,61 @@ generate_data(
 
 \item{behav_types}{character vector of length \code{n_beh} that describes
 the kind of data to be generated. Possible values are \code{"prop"},
-\code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.}
+\code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
+There is also an experimental \code{"dur_gamma0"}.}
 
 \item{indi_sd}{numeric, the SD for the individual component. Must be
 positive. Default is a random value
-(\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+(\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
 See details.}
 
 \item{dyad_sd}{numeric, the SD for the dyadic component. Must be
 positive. Default is a random value
-(\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+(\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
 See details.}
 
-\item{indi_covariate_slope}{numeric, default is \code{0}. Fits an
+\item{indi_covariate_slope}{numeric, default is \code{NULL}. Fits an
 additional covariate effect on the gregariousness vector.
 (think: age)}
 
-\item{indi_cat_slope}{numeric, default is \code{0}. Fits an additional
+\item{indi_cat_slope}{numeric, default is \code{NULL}. Fits an additional
 categorical (binary!) effect on the gregariousness vector.
 (think: sex) Note: this is coded as dummy-coded z-transformed
 variable.}
 
-\item{dyad_covariate_slope}{numeric, default is \code{0}. Fits an
+\item{dyad_covariate_slope}{numeric, default is \code{NULL}. Fits an
 additional covariate effect on the affinity vector.
 (think: relatedness)}
 
-\item{dyad_cat_slope}{numeric, default is \code{0}. Fits an additional
+\item{dyad_cat_slope}{numeric, default is \code{NULL}. Fits an additional
 categorical (binary!) effect on the affinity vector.
 (think: same-sex? yes/no) Note: this is coded as dummy-coded
 z-transformed variable.}
 
 \item{disp_pars_gamma}{numeric of the same length as \code{n_beh}.
 Dispersion parameter(s) for any behavior with
-\code{behav_types = "dur_gamma"}. See details.}
+\code{behav_types = "dur_gamma"} (or \code{"dur_gamma0"}).
+See details.}
 
 \item{disp_pars_beta}{numeric of the same length as \code{n_beh}.
 Dispersion parameter(s) for any behavior with
 \code{behav_types = "dur_beta"}. See details.}
 
-\item{beh_intercepts}{numeric of the same length as \code{n_beh}: the
-intercepts on the linear scale for each behavior
+\item{beh_intercepts}{numeric of the same length as \code{n_beh}:
+the intercepts on the linear scale for each behavior
 (the group-level average). Default is random
-(\code{rnorm(n_beh, -1, 2)}).}
+(\code{rnorm(n_beh, -2, 2)}).}
+
+\item{beh_intercepts_add}{numeric of the same length as \code{n_beh}:
+the additional intercepts on the linear scale for those
+behaviors that require more than one intercept (currently
+only: \code{"dur_gamma0"}). Values are ignored for all
+other behaviors. Default \code{rnorm(n_beh, -2, 2)}.}
 
 \item{prop_trials}{numeric of length 1 or 2, default is \code{100}, i.e.
 per dyad there are 100 'trials' observed. If numeric of length 2,
-each dyad gets its own number of trials ranging between the two values
-supplied. Only relevant for data generated as proportions.}
+each dyad gets its own number of trials ranging between the two
+values supplied. Only relevant for data generated as proportions.}
 
 \item{count_obseff}{numeric of length 1 or 2, default is \code{1}, i.e.
 per dyad there is 1 unit of observation effort (think 'hours').
@@ -113,6 +122,9 @@ Currently, four data types/distributions via \code{behav_types}
 are supported are \code{"count"}, \code{"prop"},
 \code{"dur_gamma"} and \code{"dur_beta"}.
 
+Experimentally, there is also \code{"dur_gamma0"} which is a mixture
+of gamma durations and Bernoulli: "duration of behavior if it occurred".
+
 For the dispersion parameters the input vector must be of the same
 length and the indexing must match \code{behav_types}. For example,
 \code{behav_types = c("count", "dur_gamma")} requires a vector of
@@ -131,6 +143,11 @@ empty matrices are produced (no dyad ever 'interacted'). While
 such matrices are an interesting edge case, they represent
 a challenge for the model with its default settings. Therefore,
 if such cases occur, the function will return a warning.
+
+When the effects specified by \code{indi_covariate_slope=} and friends
+are at their default \code{NULL}, the covariate vectors won't show
+up in the \code{res$standata}. When the slopes are set to \code{0} (or
+any other non-\code{NULL} value), the predictors show up in the stan data.
 }
 \examples{
 ex <- generate_data(n_ids = 7, n_beh = 2,

@@ -5,39 +5,46 @@
 #' @param behav_types character vector of length \code{n_beh} that describes
 #'        the kind of data to be generated. Possible values are \code{"prop"},
 #'        \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
+#'        There is also an experimental \code{"dur_gamma0"}.
 #' @param indi_sd numeric, the SD for the individual component. Must be
 #'                positive. Default is a random value
-#'                (\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+#'                (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
 #'                See details.
 #' @param dyad_sd numeric, the SD for the dyadic component. Must be
 #'                positive. Default is a random value
-#'                (\code{runif(1, 0, 4)}). Can also be a correlation/SD matrix.
+#'                (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
 #'                See details.
-#' @param beh_intercepts numeric of the same length as \code{n_beh}: the
-#'                       intercepts on the linear scale for each behavior
-#'                       (the group-level average). Default is random
-#'                       (\code{rnorm(n_beh, -1, 2)}).
-#' @param indi_covariate_slope numeric, default is \code{0}. Fits an
+#' @param beh_intercepts numeric of the same length as \code{n_beh}:
+#'          the intercepts on the linear scale for each behavior
+#'          (the group-level average). Default is random
+#'          (\code{rnorm(n_beh, -2, 2)}).
+#' @param beh_intercepts_add numeric of the same length as \code{n_beh}:
+#'          the additional intercepts on the linear scale for those
+#'          behaviors that require more than one intercept (currently
+#'          only: \code{"dur_gamma0"}). Values are ignored for all
+#'          other behaviors. Default \code{rnorm(n_beh, -2, 2)}.
+#' @param indi_covariate_slope numeric, default is \code{NULL}. Fits an
 #'          additional covariate effect on the gregariousness vector.
 #'          (think: age)
-#' @param indi_cat_slope numeric, default is \code{0}. Fits an additional
+#' @param indi_cat_slope numeric, default is \code{NULL}. Fits an additional
 #'          categorical (binary!) effect on the gregariousness vector.
 #'          (think: sex) Note: this is coded as dummy-coded z-transformed
 #'          variable.
-#' @param dyad_covariate_slope numeric, default is \code{0}. Fits an
+#' @param dyad_covariate_slope numeric, default is \code{NULL}. Fits an
 #'          additional covariate effect on the affinity vector.
 #'          (think: relatedness)
-#' @param dyad_cat_slope numeric, default is \code{0}. Fits an additional
+#' @param dyad_cat_slope numeric, default is \code{NULL}. Fits an additional
 #'          categorical (binary!) effect on the affinity vector.
 #'          (think: same-sex? yes/no) Note: this is coded as dummy-coded
 #'          z-transformed variable.
 #' @param prop_trials numeric of length 1 or 2, default is \code{100}, i.e.
-#'        per dyad there are 100 'trials' observed. If numeric of length 2,
-#'        each dyad gets its own number of trials ranging between the two values
-#'        supplied. Only relevant for data generated as proportions.
+#'          per dyad there are 100 'trials' observed. If numeric of length 2,
+#'          each dyad gets its own number of trials ranging between the two
+#'          values supplied. Only relevant for data generated as proportions.
 #' @param disp_pars_gamma numeric of the same length as \code{n_beh}.
-#'                        Dispersion parameter(s) for any behavior with
-#'                        \code{behav_types = "dur_gamma"}. See details.
+#'          Dispersion parameter(s) for any behavior with
+#'          \code{behav_types = "dur_gamma"} (or \code{"dur_gamma0"}).
+#'          See details.
 #' @param disp_pars_beta numeric of the same length as \code{n_beh}.
 #'          Dispersion parameter(s) for any behavior with
 #'          \code{behav_types = "dur_beta"}. See details.
@@ -47,8 +54,8 @@
 #'          sampled as uniform real between the two values. This is only
 #'          relevant for data generated as counts.
 #' @param exact logical, default is \code{TRUE}: should the varying intercepts
-#'        for \code{indi_sd} and \code{dyad_sd} be rescaled so that they
-#'        have means of 0 and exact SD as supplied.
+#'          for \code{indi_sd} and \code{dyad_sd} be rescaled so that they
+#'          have means of 0 and exact SD as supplied.
 #' @param force_z_predictors logical, force all (if there are any) covariates
 #'          (individual or dyad level features) to be z-standardized.
 #'          Default is TRUE.
@@ -57,6 +64,9 @@
 #' Currently, four data types/distributions via \code{behav_types}
 #' are supported are \code{"count"}, \code{"prop"},
 #' \code{"dur_gamma"} and \code{"dur_beta"}.
+#'
+#' Experimentally, there is also \code{"dur_gamma0"} which is a mixture
+#' of gamma durations and Bernoulli: "duration of behavior if it occurred".
 #'
 #' For the dispersion parameters the input vector must be of the same
 #' length and the indexing must match \code{behav_types}. For example,
@@ -77,6 +87,10 @@
 #' a challenge for the model with its default settings. Therefore,
 #' if such cases occur, the function will return a warning.
 #'
+#' When the effects specified by \code{indi_covariate_slope=} and friends
+#' are at their default \code{NULL}, the covariate vectors won't show
+#' up in the \code{res$standata}. When the slopes are set to \code{0} (or
+#' any other non-\code{NULL} value), the predictors show up in the stan data.
 #'
 #'
 #'
@@ -123,22 +137,19 @@
 
 
 # n_ids = 5
-# n_beh = 2
-# behav_types = c("count", "prop")
+# n_beh = 3
+# behav_types = c("count", "dur_gamma0", "prop")
 # indi_sd = 1.2
 # dyad_sd = 0.8
-# indi_covariate_slope = 1
-# indi_cat_slope = 1
-# dyad_covariate_slope = 1
-# dyad_cat_slope = 1
-# disp_pars_gamma = c(0, 0.6)
+# indi_covariate_slope = indi_cat_slope = dyad_covariate_slope = dyad_cat_slope = NULL
+# disp_pars_gamma = c(NA, 0.6, NA)
 # disp_pars_beta = NULL
-# beh_intercepts = c(1.4, -0.7)
+# beh_intercepts = c(1.4, -0.5, -0.7)
+# beh_intercepts_add = c(-0.5, -0.5, -0.7)
 # prop_trials = 100
 # count_obseff = 1
 # exact = TRUE
-
-
+# force_z_predictors=TRUE
 
 
 generate_data <- function(n_ids = NULL,
@@ -146,14 +157,15 @@ generate_data <- function(n_ids = NULL,
                           behav_types = "count",
                           indi_sd = NULL,
                           dyad_sd = NULL,
-                          indi_covariate_slope = 0,
-                          indi_cat_slope = 0,
-                          dyad_covariate_slope = 0, # slope for additional dyadic parameter
-                          dyad_cat_slope = 0,
+                          indi_covariate_slope = NULL,
+                          indi_cat_slope = NULL,
+                          dyad_covariate_slope = NULL,
+                          dyad_cat_slope = NULL,
                           disp_pars_gamma = NULL, # for durations as gamma
                           disp_pars_beta = NULL, # for durations as beta
                           beh_intercepts = NULL,
-                          prop_trials = 100, # number of trials for binomial (proportion data)
+                          beh_intercepts_add = NULL,
+                          prop_trials = 100, # number of trials for binomial
                           count_obseff = 1, # observation effort for count data
                           exact = TRUE,
                           force_z_predictors = TRUE) {
@@ -164,40 +176,42 @@ generate_data <- function(n_ids = NULL,
   indi_intercept <- 0
   dyad_intercept <- 0
 
-  # do_indi_covariate_slope <- TRUE
-  # do_indi_cat_slope <- TRUE
-  # do_dyad_covariate_slope <- TRUE
-  # do_dyad_cat_slope <- TRUE
+  # add predictors into data item?
+  do_indi_covariate_slope <- TRUE
+  do_indi_cat_slope <- TRUE
+  do_dyad_covariate_slope <- TRUE
+  do_dyad_cat_slope <- TRUE
 
-  # if (is.null(indi_covariate_slope)) {
-  #   indi_covariate_slope <- 0
-  #   do_indi_covariate_slope <- FALSE
-  # }
-  # if (is.null(indi_cat_slope)) {
-  #   indi_cat_slope <- 0
-  #   do_indi_cat_slope <- FALSE
-  # }
-  # if (is.null(dyadic_covariate_slope)) {
-  #   dyadic_covariate_slope <- 0
-  #   do_dyadic_covariate_slope <- FALSE
-  # }
-  # if (is.null(dyadic_cat_slope)) {
-  #   dyadic_cat_slope <- 0
-  #   do_dyadic_cat_slope <- FALSE
-  # }
+  if (is.null(indi_covariate_slope)) {
+    indi_covariate_slope <- 0
+    do_indi_covariate_slope <- FALSE
+  }
+  if (is.null(indi_cat_slope)) {
+    indi_cat_slope <- 0
+    do_indi_cat_slope <- FALSE
+  }
+  if (is.null(dyad_covariate_slope)) {
+    dyad_covariate_slope <- 0
+    do_dyad_covariate_slope <- FALSE
+  }
+  if (is.null(dyad_cat_slope)) {
+    dyad_cat_slope <- 0
+    do_dyad_cat_slope <- FALSE
+  }
 
   if (is.null(n_ids)) n_ids <- sample(5:30, 1)
   if (is.null(n_beh)) n_beh <- sample(1:4, 1)
-  if (is.null(indi_sd)) indi_sd <- runif(1, 0, 4)
-  if (is.null(dyad_sd)) dyad_sd <- runif(1, 0, 4)
-  if (is.null(disp_pars_gamma)) disp_pars_gamma <- runif(n_beh, 0, 1)
+  if (is.null(indi_sd)) indi_sd <- runif(1, 0.1, 2)
+  if (is.null(dyad_sd)) dyad_sd <- runif(1, 0.1, 2)
+  if (is.null(disp_pars_gamma)) disp_pars_gamma <- runif(n_beh, 1, 10)
   if (is.null(disp_pars_beta)) disp_pars_beta <- runif(n_beh, 5, 30)
-  if (is.null(beh_intercepts)) beh_intercepts <- rnorm(n_beh, -1, 2)
+  if (is.null(beh_intercepts)) beh_intercepts <- rnorm(n_beh, -2, 2)
+  if (is.null(beh_intercepts_add)) beh_intercepts_add <- rnorm(n_beh, -2, 2)
 
   # prelims
   n_dyads <- n_ids * (n_ids - 1) / 2
-  # dyads <- t(combn(seq_len(n_ids), 2))
   dyads <- which(upper.tri(diag(n_ids)), arr.ind = TRUE)
+  # beh_intercepts <- as.list(beh_intercepts)
 
   # some checks
   # dealing with correlated sociality scales
@@ -212,9 +226,12 @@ generate_data <- function(n_ids = NULL,
     colindex <- seq_len(mulength)
   }
   if (n_beh != length(beh_intercepts)) {
-    stop("require one intercept for each behavior (there is a mismatch between n_beh and length(beh_intercepts)", call. = FALSE)
+    stop("require one intercept for each behavior (there is a mismatch ",
+         "between n_beh and length(beh_intercepts)", call. = FALSE)
   }
-  if (length(indi_sd) != length(dyad_sd)) stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
+  if (length(indi_sd) != length(dyad_sd)) {
+    stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
+  }
 
   # how many columns should the SD matrices have?
   if (length(indi_sd) == 1) {
@@ -236,11 +253,13 @@ generate_data <- function(n_ids = NULL,
   # rm(indi_sd)
   # rm(dyad_sd)
 
+  # we can't deal generically with correlations with dur_gamma0
+  # (i.e. behavior where we need to estimate more than one intercept)
+  if ("dur_gamma0" %in% behav_types && length(indi_sd_mat) != 1) {
+    stop("can't handle correlations with dur_gamma0")
+  }
 
-
-
-
-  # create sociality values (individual-level and dyad-level)
+  # create sociality values (individual-level and dyad-level) ----
 
   # individual-level data
   indi_data <- data.frame(id = seq_len(n_ids),
@@ -326,10 +345,12 @@ generate_data <- function(n_ids = NULL,
   behav_types_num[btypes == "prop"] <- 2
   behav_types_num[btypes == "dur_gamma"] <- 3
   behav_types_num[btypes == "dur_beta"] <- 4
+  behav_types_num[btypes == "dur_gamma0"] <- 5
 
   # indexing for optional shape/dispersion parameters
   gamma_shape <- logical(n_beh)
   gamma_shape[btypes == "dur_gamma"] <- TRUE
+  gamma_shape[btypes == "dur_gamma0"] <- TRUE
   gamma_shape_pos <- numeric(n_beh)
 
   beta_shape <- logical(n_beh)
@@ -349,7 +370,7 @@ generate_data <- function(n_ids = NULL,
         obseff[, i] <- sample(as.integer(prop_trials[1]):as.integer(prop_trials[2]), size = n_dyads, replace = TRUE)
       }
     }
-    if (btypes[i] == "count") {
+    if (btypes[i] == "count" || btypes[i] == "dur_gamma0") {
       if (length(count_obseff) == 1) {
         obseff[, i] <- count_obseff
       } else {
@@ -360,25 +381,33 @@ generate_data <- function(n_ids = NULL,
     }
   }
 
-
-  # random dyadic covariate (think: relatedness)
-  # dyadic_covariate_predictor <- as.numeric(scale(rnorm(n = n_dyads,
-                                                       # mean = 0,
-                                                       # sd = 1)))
-
-  # lp <- indi_intercept + dyad_intercept +
-  #   0.5 * (indi_soc_vals[dyads[, 1]] + indi_soc_vals[dyads[, 2]]) +
-  #   dyad_soc_vals +
-  #   dyadic_covariate_slope * dyadic_covariate_predictor
-
   interactions <- matrix(ncol = n_beh, nrow = n_dyads)
   for (i in seq_len(n_beh)) {
     lp <- indi_intercept + dyad_intercept +
       sqrt(0.5) * (indi_soc_vals[dyads[, 1], colindex[i]] + indi_soc_vals[dyads[, 2], colindex[i]]) +
       dyad_soc_vals[, colindex[i]]
 
+    if (btypes[i] == "dur_gamma0") {
+      lp_bern <- lp + beh_intercepts[i] # first is for bern
+      # probvec <- 1 - exp(-(exp(lp_bern) * obseff[, i]))
+      lb_gamma <- lp + beh_intercepts_add[i] # second/additional intercept is for gamma
+      lb_gamma <- lb_gamma + log(obseff[, i])
 
-    lp_b <- lp + beh_intercepts[i]
+      aux_y1 <- rbinom(n = n_dyads, size = 1, prob = lin2prob(lp_bern, obseff[, i]))
+      # aux_y1 <- rbinom(n = n_dyads, size = 1, prob = plogis(lp_bern))
+      aux_y2 <- rgamma(n = n_dyads, shape = disp_pars_gamma[i], rate = disp_pars_gamma[i]/exp(lb_gamma))
+      interactions[, i] <- aux_y1 * aux_y2
+      gamma_shape_pos[i] <- i
+
+      if (all(aux_y1 == 1)) {
+        warning("'dur_gamma0' with only non-zero values generated (this might not be a problem)")
+      }
+      if (all(aux_y1 == 0)) {
+        warning("'dur_gamma0' with only zero-values generated (this is gonna be a problem for fitting the default model)")
+      }
+    }
+
+    lp_b <- lp + unlist(beh_intercepts[i])[1]
     if (btypes[i] == "count") {
       interactions[, i] <- rpois(n = n_dyads,
                                  lambda = exp(lp_b + log(obseff[, i])))
@@ -390,21 +419,28 @@ generate_data <- function(n_ids = NULL,
     }
     if (btypes[i] == "dur_gamma") {
       # first translate mean (and variance) into shape and rate
-      dispersion <- 1 / disp_pars_gamma[i]
-      lp_offs <- exp(lp_b + log(obseff[, i]))
-      variance <- dispersion * (lp_offs^2)
-      shape <- (lp_offs^2) / variance
-      rate <- lp_offs / variance
-      interactions[, i] <- rgamma(n = n_dyads, shape = shape, rate = rate)
+      # dispersion <- 1 / disp_pars_gamma[i]
+      # lp_offs <- exp(lp_b + log(obseff[, i]))
+      # variance <- dispersion * (lp_offs^2)
+      # shape <- (lp_offs^2) / variance
+      # rate <- lp_offs / variance
+      # interactions[, i] <- rgamma(n = n_dyads, shape = shape, rate = rate)
+      #
+      # gamma_shape_pos[i] <- i
+      #
+      # # check for any 0s
+      # if (any(interactions[, i] == 0)) {
+      #   sel <- which(interactions[, i] == 0)
+      #   sel2 <- which(interactions[, i] > 0)
+      #   interactions[sel, i] <- min(interactions[sel2, i])
+      # }
+      #
 
+      # use same parameterization as in dur_gamma0
+      lb_gamma <- lp + beh_intercepts[i]
+      lb_gamma <- lb_gamma + log(obseff[, i])
+      interactions[, i] <- rgamma(n = n_dyads, shape = disp_pars_gamma[i], rate = disp_pars_gamma[i]/exp(lb_gamma))
       gamma_shape_pos[i] <- i
-
-      # check for any 0s
-      if (any(interactions[, i] == 0)) {
-        sel <- which(interactions[, i] == 0)
-        sel2 <- which(interactions[, i] > 0)
-        interactions[sel, i] <- min(interactions[sel2, i])
-      }
     }
 
     if (btypes[i] == "dur_beta") {
@@ -434,16 +470,22 @@ generate_data <- function(n_ids = NULL,
 
   }
 
-  # create default priors for behaviors
+  # create default priors for behavior intercepts
   # at this point 'interactions' is not yet split into discrete vs continuous
+  # we need a second set for behaviors with more than one mean parameter
   prior_matrix <- matrix(ncol = 2, nrow = n_beh)
+  prior_matrix2 <- matrix(ncol = 2, nrow = n_beh, 0)
   for (i in 1:n_beh) {
     response <- interactions[, i]
     prior_matrix[i, ] <- make_prior(response = response,
                                     type = behav_types[i],
                                     obseff = obseff[, i])
+    # currently only relevant for dur_gamma0
+    prior_matrix2[i, ] <- make_prior(response = response,
+                                     type = behav_types[i],
+                                     obseff = obseff[, i],
+                                     second = TRUE)
   }
-  prior_matrix
 
   # dsi
   aux <- interactions / obseff
@@ -502,17 +544,24 @@ generate_data <- function(n_ids = NULL,
   bdata <- c(behav_types_num, 0)
   names(bdata) <- c(behav_types, "0")
 
+  # and dyads which were removed (doesn't apply here, but for consistency)
+  # index <- which(upper.tri(imats[[1]]), arr.ind = TRUE)
+  # removed_dyads <- index[is.na(interactions[, 1]), , drop = FALSE]
+  removed_dyads <- which(upper.tri(matrix(1)), arr.ind = TRUE)
+
+
   standat <- list(id1 = dyads[, 1],
                   id2 = dyads[, 2],
                   behav_types = bdata,
                   interactions = apply(interactions, 2, as.integer),
-                  interactions_cont = interactions,
+                  interactions_cont = apply(interactions, 2, as.numeric),
                   n_beh = as.integer(n_beh),
                   n_ids = as.integer(n_ids),
                   n_dyads = as.integer(n_dyads),
                   dyads_navi = as.matrix(dyads[, 1:2]),
                   obseff = obseff,
                   prior_matrix = prior_matrix,
+                  prior_matrix2 = prior_matrix2, # second set of priors (for now only relevant for dur_gamma0)
                   obseff_int = apply(obseff, 2, as.integer),
                   gamma_shape_pos = gamma_shape_pos_mod,
                   gamma_shape_n = sum(gamma_shape_pos > 0),
@@ -520,15 +569,29 @@ generate_data <- function(n_ids = NULL,
                   beta_shape_n = sum(beta_shape_pos > 0),
                   id_codes = vec,
                   beh_names = rep(0, n_beh),
+                  removed_dyads = removed_dyads,
                   n_cors = 0
                   )
 
-  # if (do_indi_cat_slope) {
-  standat$indi_cat_pred       <- indi_data$feature_cat
-  # }
-  standat$indi_covariate_pred <- indi_data$feature_cont
-  standat$dyad_cat_pred       <- dyad_data$feature_cat
-  standat$dyad_covariate_pred <- dyad_data$feature_cont
+  # standat$indi_cat_pred <- 0
+  # standat$indi_covariate_pred <- 0
+  # standat$dyad_cat_pred <- 0
+  # standat$dyad_covariate_pred <- 0
+
+  # if slopes are not specified, don't append predictors to stan data
+  if (do_indi_cat_slope) {
+    standat$indi_cat_pred       <- indi_data$feature_cat
+  }
+  if (do_indi_covariate_slope) {
+    standat$indi_covariate_pred <- indi_data$feature_cont
+  }
+  if (do_dyad_cat_slope) {
+    standat$dyad_cat_pred       <- dyad_data$feature_cat
+  }
+  if (do_dyad_covariate_slope) {
+    standat$dyad_covariate_pred <- dyad_data$feature_cont
+  }
+
 
   if (is.null(names(behav_types))) {
     names(standat$beh_names) <- paste0("behav_", LETTERS[seq_len(n_beh)])
@@ -566,6 +629,7 @@ generate_data <- function(n_ids = NULL,
                          disp_pars_gamma = disp_pars_gamma,
                          disp_pars_beta = disp_pars_beta,
                          beh_intercepts = beh_intercepts,
+                         beh_intercepts_add = beh_intercepts_add,
                          obseff = obseff),
        processed = list(interaction_cor = ifelse(all(colSums(interactions) > 0),
                                                  cor(interactions, method = "s"),

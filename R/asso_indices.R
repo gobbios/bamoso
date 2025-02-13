@@ -75,10 +75,10 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
   } else {
     hwi_a <- apply(dyads, 1, function(x) {
       sum(hwi[dyads[, 1] == x[1] | dyads[, 2] == x[1]])
-      })
+    })
     hwi_b <- apply(dyads, 1, function(x) {
       sum(hwi[dyads[, 1] == x[2] | dyads[, 2] == x[2]])
-      })
+    })
     hwig_out <- hwi * (sum(hwi) / (hwi_a * hwi_b))
   }
 
@@ -90,8 +90,9 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
 
   # assm=assocmg-diag(diag(assocmg));%zeros on diagonal
   # nuu=length(assm(1,:));
-  # greg=log(sum(assm,2)*sum(assm,1)-(ones(nuu,1)*sum(assm,1)+sum(assm,2)*ones(1,nuu)-assm).*assm);
-  # assocm=greg-diag(diag(greg));        %full(sum(assm,2)*sum(assm,1)/sum(assm(:)));
+  # greg=log(sum(assm,2)*sum(assm,1)-(ones(nuu,1)*sum(assm,1)+
+  #          sum(assm,2)*ones(1,nuu)-assm).*assm);
+  # assocm=greg-diag(diag(greg)); %full(sum(assm,2)*sum(assm,1)/sum(assm(:)));
 
   # for SRI:
   m <- matrix(0, ncol = ncol(xdata), nrow = ncol(xdata))
@@ -131,7 +132,7 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
   # alt_order <- integer(nrow(dyads))
   alt_order <- apply(dyads, 1, function(x) {
     which(alt_dyads[, 1] == x[1] & alt_dyads[, 2] == x[2])
-    })
+  })
 
 
   res <- data.frame(i1 = dyads[, "i1"],
@@ -139,7 +140,8 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
                     i1_name = id_codes[dyads[, "i1"]],
                     i2_name = id_codes[dyads[, "i2"]],
                     alt_order = alt_order,
-                    hwig = hwig_out * 2, # not sure why need to multiply to replicate SOCPROG!
+                    # not sure why need to multiply to replicate SOCPROG!
+                    hwig = hwig_out * 2,
                     hwig_ori = hwig_out,
                     hwi = hwi,
                     sri = sri,

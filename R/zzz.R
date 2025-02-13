@@ -1,3 +1,6 @@
+utils::globalVariables("lkjpriors")
+
+
 #' grooming matrices and observation effort for four macaque species
 #'
 #' @format a list with four items. Each item is a list itself with one grooming
@@ -221,3 +224,19 @@ rnorm_multi <- function(n, mu = 0, Sigma = matrix(1), empirical = TRUE, tol = 1e
   X <- drop(mu) + eS$vectors %*% diag(sqrt(pmax(ev, 0)), p) %*% t(X)
   t(X)
 }
+
+
+#' link function for probabilities with observation effort
+#' @param x linear predictor (unconstrained)
+#' @param obseff positive observation effort (offset)
+lin2prob <- function(x, obseff) {
+  1 - exp(-exp(x) * obseff)
+}
+
+#' link function for probabilities with observation effort
+#' @param x probability predictor (constrained)
+#' @param obseff positive observation effort (offset)
+prob2lin <- function(x, obseff) {
+  log((-log(1 - x))/obseff)
+}
+

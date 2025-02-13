@@ -37,18 +37,18 @@ summary.dyadicmodel <- function(object, ...) {
                               format = "draws_matrix")
 
     qs_i <- apply(d[, grepl("indi_soc_sd", colnames(d))], 2, quantile, c(0.055, 0.5, 0.945))
-    qs_i <- apply(qs_i, 1, function(x)sprintf("%.2f", x))
+    qs_i <- apply(qs_i, 1, function(x) sprintf("%.2f", x))
     qs_d <- apply(d[, grepl("dyad_soc_sd", colnames(d))], 2, quantile, c(0.055, 0.5, 0.945))
-    qs_d <- apply(qs_d, 1, function(x)sprintf("%.2f", x))
+    qs_d <- apply(qs_d, 1, function(x) sprintf("%.2f", x))
 
     # and correlations
     d <- object$mod_res$draws(c("cors_indi", "cors_dyad"),
                               format = "draws_matrix")
 
     qs_i_cors <- apply(d[, grepl("cors_indi", colnames(d)), drop = FALSE], 2, quantile, c(0.055, 0.5, 0.945))
-    qs_i_cors <- apply(qs_i_cors, 1, function(x)sprintf("%.2f", x))
+    qs_i_cors <- apply(qs_i_cors, 1, function(x) sprintf("%.2f", x))
     qs_d_cors <- apply(d[, grepl("cors_dyad", colnames(d))], 2, quantile, c(0.055, 0.5, 0.945))
-    qs_d_cors <- apply(qs_d_cors, 1, function(x)sprintf("%.2f", x))
+    qs_d_cors <- apply(qs_d_cors, 1, function(x) sprintf("%.2f", x))
     if (is.null(nrow(qs_i_cors))) {
       qs_i_cors <- matrix(qs_i_cors, ncol = 3)
     }

@@ -27,7 +27,8 @@ fit_example_model <- function(num = 1) {
 
   if (num == 2) {
     if (interactive()) {
-      cat("12 indis, 2 behaviors, cors generated, but *not* fitted\n")
+      cat("12 indis, 2 behaviors, cors generated,",
+          "but *not used* during data generation\n")
     }
 
     cors_indi <- matrix(c(0.7, 0.8, 0.8, 0.8), ncol = 2)
@@ -76,6 +77,40 @@ fit_example_model <- function(num = 1) {
                          iter_warmup = 500, iter_sampling = 100)
     return(r)
   }
+
+  if (num == 5) {
+    if (interactive()) {
+      cat("12 indis, 2 behaviors, no cors\n")
+    }
+
+    x <- generate_data(n_ids = 12, n_beh = 2,
+                       beh_intercepts = c(0.5, 0.5),
+                       behav_types = c("count", "prop"),
+                       indi_sd = 1.2, dyad_sd = 0.8)
+
+    s <- x$standat
+    r <- sociality_model(s, parallel_chains = 4, seed = 1, adapt_delta = 0.85, show_exceptions = FALSE, refresh = 0,
+                         iter_warmup = 500, iter_sampling = 100)
+    return(r)
+  }
+
+  if (num == 6) {
+    if (interactive()) {
+      cat("12 indis, 1 behavior\n")
+    }
+
+    x <- generate_data(n_ids = 12, n_beh = 1,
+                       beh_intercepts = c(0.5),
+                       behav_types = c("count"),
+                       indi_sd = 1.2, dyad_sd = 0.8)
+
+    s <- x$standat
+    r <- sociality_model(s, parallel_chains = 4, seed = 1, adapt_delta = 0.85, show_exceptions = FALSE, refresh = 0,
+                         iter_warmup = 500, iter_sampling = 100)
+    return(r)
+  }
+
+
 }
 
 

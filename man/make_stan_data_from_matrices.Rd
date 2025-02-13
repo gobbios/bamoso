@@ -22,7 +22,8 @@ make_stan_data_from_matrices(
 the kind of data. Possible values are \code{"prop"},
 \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 At its default all behaviors are considered
-to be \code{"count"}.}
+to be \code{"count"}. There is also experimental support
+for \code{"dur_gamma0"} (zero augmented durations).}
 
 \item{obseff}{numeric vector with observation effort. Must be positive
 and one value for each individual, e.g. focal observation
@@ -49,9 +50,11 @@ Either binary, or continuous. Default is \code{NULL} and if so,
 will occur as \code{NULL} in the output object.}
 
 \item{correlations}{logical, default is \code{FALSE}. Flags whether
-subsequent model should estimate correlations between
-individuals and dyadic axes. This only makes sense if
-there are at least two sampled behaviors.}
+subsequent model should estimate correlations between individuals
+and dyadic axes. This only makes sense if there are at least
+two sampled behaviors. If one or more behaviors are
+\code{"dur_gamma0"} correlations are not supported yet and this
+results in an error if set to \code{TRUE}.}
 }
 \value{
 a named list that can be handed over to Stan as \code{data} via
@@ -76,6 +79,7 @@ likelihood
 \item \code{$beta_shape_pos} integer index for responses with
 beta likelihood
 \item \code{$prior_matrix} matrix with priors for intercepts
+\item \code{$prior_matrix2} matrix with priors for additional intercepts
 \item \code{$generate_predictions} currently unused
 \item \code{$id_codes} vector of 0's with names corresponding to
 individuals' codes

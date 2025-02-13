@@ -13,7 +13,8 @@ check_data(mats, behav_types = NULL, obseff = NULL)
 the kind of data. Possible values are \code{"prop"},
 \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 At its default all behaviors are considered
-to be \code{"count"}.}
+to be \code{"count"}. There is also experimental support
+for \code{"dur_gamma0"} (zero augmented durations).}
 
 \item{obseff}{numeric vector with observation effort. Must be positive
 and one value for each individual, e.g. focal observation

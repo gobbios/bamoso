@@ -88,6 +88,9 @@ make_stan_data_from_association <- function(asso_table,
   bdata <- c(2, 0) # prop
   names(bdata) <- c("prop", "0")
 
+  # and dyads which were removed (doesn't apply here, but for consistency)
+  removed_dyads <- which(upper.tri(matrix(1)), arr.ind = TRUE)
+
   out <- list(id1 = index[, 1],
               id2 = index[, 2],
               interactions = apply(interactions, 2, as.integer),
@@ -107,8 +110,10 @@ make_stan_data_from_association <- function(asso_table,
               obseff = obseff_dat,
               obseff_int = apply(obseff_dat, 2, as.integer),
               prior_matrix = prior_matrix,
+              prior_matrix2 = prior_matrix - prior_matrix, # just placeholder to make stan data 'complete'
               id_codes = vec,
               beh_names = vec_behaviors,
+              removed_dyads = removed_dyads,
               behav_types = bdata,
               n_cors = 0
   )

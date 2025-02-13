@@ -9,11 +9,11 @@ cor_plot(model, greg = TRUE, axis1 = NULL, axis2 = NULL, n_draws = 200, ...)
 \arguments{
 \item{model}{result of \code{\link{sociality_model}}}
 
-\item{greg}{description}
+\item{greg}{logical (default is \code{TRUE}). Plot gregariousness or
+affinity.}
 
-\item{axis1}{name of behavior 1}
-
-\item{axis2}{name of behavior 2}
+\item{axis1, axis2}{name of behaviors for which the correlation should be
+processed}
 
 \item{n_draws}{numeric, number of draws to be plotted}
 
@@ -23,10 +23,14 @@ cor_plot(model, greg = TRUE, axis1 = NULL, axis2 = NULL, n_draws = 200, ...)
 a plot
 }
 \description{
-correlation plot
+visualizes posterior samples of gregariousness or affinity values
+}
+\details{
+Two randomly selected individuals/dyads are highlighted.
 }
 \examples{
 model <- fit_example_model(num = 1)
-cor_plot(model, xlim = c(-3, 3), asp = 1)
+summary(model)
+cor_plot(model, asp = 1, xlab = "A", ylab = "B")
 cor_plot(model, greg = FALSE, xlim = c(-3, 3), asp = 1)
 }

@@ -6,11 +6,14 @@
 #' @param obseff numeric vector with offset values for \code{"count"}
 #'        and \code{"dur_gamma"} data, or with number of 'trials' for
 #'        \code{"prop"}
+#' @param second logical (default is \code{FALSE}) for flagging generating
+#'          second set of priors (currently only relevant for
+#'          \code{"dur_gamma0"})
 #'
 #' @details The resulting values can be used to set priors for the intercept
 #'          values in the form of \code{student_t(3, location, scale)}.
-#'          The values produced here are fairly similar to the ones produced
-#'          by \code{brms}.
+#'          The values produced here are fairly similar to the default ones
+#'          produced by \code{brms}.
 #'
 #' @return two values for mean (location) and spread (scale).
 #' @importFrom stats mad median qlogis
@@ -33,12 +36,57 @@
 #' brms::get_prior(response ~ 1, data = xdata, family = poisson())
 
 
-make_prior <- function(response, type, obseff = NULL) {
-  if (type == "count" || type == "dur_gamma") {
-    if (type == "count") {
+make_prior <- function(response, type, obseff = NULL, second = FALSE) {
+
+  # secondary intercepts:
+    # - dur_gamma0: gamma part
+  if (second) {
+    location <- 0
+    scale <- 0
+    if (type == "dur_gamma0") {
+      if (!is.null(obseff)) obseff <- obseff[response > 0]
+      response <- response[response > 0]
+      if (is.null(obseff)) obseff <- rep(1, length(response))
       if (any(obseff == 0, na.rm = TRUE)) {
-        stop("can't have any 0s in the observation effort for a 'count' behaviour", call. = FALSE)
+        stop("can't have any 0s in the observation effort for a 'dur_gamma0' behaviour", call. = FALSE)
       }
+      lresp <- log(response / obseff)
+      location <- round(median(lresp), 1)
+      if (is.infinite(location)) {
+        stop("couldn't set a prior (prior mean is infinite)", call. = FALSE)
+      }
+      scale <- round(mad(lresp), 1)
+      if (scale < 2.5) scale <- 2.5
+    }
+    return(c(location = location, scale = scale))
+  }
+
+  if (type == "dur_gamma0") {
+    scale <- 2.5
+    binresp <- mean(as.numeric(response > 0))
+    meanobseff <- 1
+    if (is.null(obseff)) meanobseff <- mean(obseff)
+    location <- round(prob2lin(binresp, meanobseff), 1)
+  }
+
+  if (type == "dur_gamma") {
+    if (any(obseff == 0, na.rm = TRUE)) {
+      stop("can't have any 0s in the observation effort for 'gamma' behaviour",
+           call. = FALSE)
+    }
+    if (is.null(obseff)) obseff <- rep(1, length(response))
+    if (any(response == 0)) response <- response + 0.1
+    lresp <- log(response / obseff)
+    location <- round(median(lresp), 1)
+    scale <- round(mad(lresp), 1)
+    if (scale < 2.5) scale <- 2.5
+  }
+
+
+  if (type == "count") {
+    if (any(obseff == 0, na.rm = TRUE)) {
+      stop("can't have any 0s in the observation effort for 'count' behaviour",
+           call. = FALSE)
     }
     if (is.null(obseff)) obseff <- rep(1, length(response))
     if (any(response == 0)) response <- response + 0.1

@@ -1,28 +1,40 @@
 #' correlation plot
 #'
+#' visualizes posterior samples of gregariousness or affinity values
+#'
 #' @param model result of \code{\link{sociality_model}}
-#' @param greg description
-#' @param axis1 name of behavior 1
-#' @param axis2 name of behavior 2
+#' @param greg logical (default is \code{TRUE}). Plot gregariousness or
+#'          affinity.
+#' @param axis1,axis2 name of behaviors for which the correlation should be
+#'          processed
 #' @param n_draws numeric, number of draws to be plotted
 #' @param ... additional argument to \code{\link{plot}}
 #'
+#' @importFrom grDevices contourLines
 #' @export
 #' @return a plot
+#'
+#' @details
+#' Two randomly selected individuals/dyads are highlighted.
+#'
+#'
 #' @examples
 #' model <- fit_example_model(num = 1)
-#' cor_plot(model, xlim = c(-3, 3), asp = 1)
+#' summary(model)
+#' cor_plot(model, asp = 1, xlab = "A", ylab = "B")
 #' cor_plot(model, greg = FALSE, xlim = c(-3, 3), asp = 1)
 
 # requires MASS package...
 # @importFrom MASS kde2d
+
 
 cor_plot <- function(model,
                      greg = TRUE,
                      axis1 = NULL,
                      axis2 = NULL,
                      n_draws = 200,
-                     ...) {
+                     ...
+                     ) {
 
   if (!requireNamespace("MASS", quietly = TRUE)) {
     stop("Package 'MASS' is required for this function but is not installed. ",

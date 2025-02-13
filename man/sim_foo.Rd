@@ -6,9 +6,13 @@
 \usage{
 sim_foo(
   ...,
-  indi_sd = runif(1, 0.1, 3),
-  dyad_sd = runif(1, 0.1, 3),
-  intercept_range = c(-3, 0),
+  n_ids = sample(8:32, 1),
+  indi_sd = runif(1, 0.1, 2),
+  dyad_sd = runif(1, 0.1, 2),
+  n_beh = sample(3, 1),
+  intercepts = runif(n_beh, -2, 2),
+  disp_pars_gamma = runif(n_beh, 1, 10),
+  disp_pars_beta = runif(n_beh, 5, 30),
   outpath = NULL,
   outfilename = NULL,
   silent = TRUE,
@@ -22,16 +26,24 @@ sim_foo(
 \arguments{
 \item{...}{arguments for \code{\link{generate_data}}}
 
+\item{n_ids}{see \code{\link{generate_data}}}
+
 \item{indi_sd}{numeric, SD for gregariousness (defaults to
-\code{runif(1, 0.1, 3)})}
+\code{runif(1, 0.1, 2)})}
 
 \item{dyad_sd}{numeric, SD for dyadic affinity (defaults to
-\code{runif(1, 0.1, 3)})}
+\code{runif(1, 0.1, 2)})}
 
-\item{intercept_range}{numeric of length two, determines the range for
-intercepts. Defaults to \code{c(-3, 0)}. How many
+\item{n_beh}{see \code{\link{generate_data}}}
+
+\item{intercepts}{numeric of length two, determines the range for
+intercepts. Defaults to \code{c(-2, 2)}. How many
 intercepts are needed is determined inside the
 function.}
+
+\item{disp_pars_gamma}{see \code{\link{generate_data}}}
+
+\item{disp_pars_beta}{see \code{\link{generate_data}}}
 
 \item{outpath}{character, output path (defaults to R's \code{\link{tempdir}})}
 

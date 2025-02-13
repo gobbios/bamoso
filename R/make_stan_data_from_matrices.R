@@ -12,7 +12,8 @@
 #'                    the kind of data. Possible values are \code{"prop"},
 #'                    \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 #'                    At its default all behaviors are considered
-#'                    to be \code{"count"}.
+#'                    to be \code{"count"}. There is also experimental support
+#'                    for \code{"dur_gamma0"} (zero augmented durations).
 #' @param indi_cat_pred vector with binary individual-
 #'                      level predictor. Must contain one value per individual
 #'                      and can only reflect two categories (as 0's and 1's)!
@@ -28,9 +29,11 @@
 #'          will occur as \code{NULL} in the output object.
 #'
 #' @param correlations logical, default is \code{FALSE}. Flags whether
-#'                     subsequent model should estimate correlations between
-#'                     individuals and dyadic axes. This only makes sense if
-#'                     there are at least two sampled behaviors.
+#'          subsequent model should estimate correlations between individuals
+#'          and dyadic axes. This only makes sense if there are at least
+#'          two sampled behaviors. If one or more behaviors are
+#'          \code{"dur_gamma0"} correlations are not supported yet and this
+#'          results in an error if set to \code{TRUE}.
 #'
 #' @details If supplied via column names in \code{mats[[1]]}, id codes are
 #'          present in the output as names of vector of zeros.
@@ -60,6 +63,7 @@
 #'     \item \code{$beta_shape_pos} integer index for responses with
 #'                                        beta likelihood
 #'     \item \code{$prior_matrix} matrix with priors for intercepts
+#'     \item \code{$prior_matrix2} matrix with priors for additional intercepts
 #'     \item \code{$generate_predictions} currently unused
 #'     \item \code{$id_codes} vector of 0's with names corresponding to
 #'                                  individuals' codes
@@ -109,6 +113,13 @@ make_stan_data_from_matrices <- function(mats,
                                          dyad_covariate_pred = NULL,
                                          correlations = FALSE
                                          ) {
+
+  # some easy checks:
+  if ("dur_gamma0" %in% behav_types && correlations == TRUE) {
+    stop("can't handle correlations with dur_gamma0", call. = FALSE)
+  }
+
+
   # convert obseff to list of matrices
   # if NULL: convert to matrices filled with 1's in upper triangle
   # if vectors: sum individual values and put them in upper triangle
@@ -163,7 +174,7 @@ make_stan_data_from_matrices <- function(mats,
   if (length(behav_types) != n_beh) {
     stop("require exactly ", n_beh, " 'behave_types' specified")
   }
-  if (!all(behav_types %in% c("count", "prop", "dur_gamma", "dur_beta"))) {
+  if (!all(behav_types %in% c("count", "prop", "dur_gamma", "dur_gamma0", "dur_beta"))) {
     stop("unknown behavior type supplied")
   }
 
@@ -176,6 +187,7 @@ make_stan_data_from_matrices <- function(mats,
   # indexing for optional shape/dispersion parameters
   gamma_shape <- logical(n_beh)
   gamma_shape[behav_types == "dur_gamma"] <- TRUE
+  gamma_shape[behav_types == "dur_gamma0"] <- TRUE
   gamma_shape_pos <- numeric(n_beh)
 
   beta_shape <- logical(n_beh)
@@ -183,7 +195,7 @@ make_stan_data_from_matrices <- function(mats,
   beta_shape_pos <- numeric(n_beh)
 
   for (i in seq_len(n_beh)) {
-    if (behav_types[i] == "dur_gamma") {
+    if (behav_types[i] %in% c("dur_gamma", "dur_gamma0")) {
       gamma_shape_pos[i] <- i
     }
     if (behav_types[i] == "dur_beta") {
@@ -286,9 +298,25 @@ make_stan_data_from_matrices <- function(mats,
   prior_matrix <- matrix(ncol = 2, nrow = length(mats))
   for (i in seq_along(mats)) {
     response <- interactions[sel, i]
+    if (behav_types[i] == "dur_gamma0") {
+      # for bernoulli part of mixture...
+      prior_matrix[i, ] <- c(0, 2.5)
+      next
+    }
     prior_matrix[i, ] <- make_prior(response = response,
                                     type = behav_types[i],
                                     obseff = obseff_dat[sel, i])
+  }
+  # need a second set in case we have behaviors with more than one mean parameter
+  prior_matrix2 <- matrix(ncol = 2, nrow = n_beh, 0)
+  for (i in 1:n_beh) {
+    # for gamma part in the mixture
+    if (behav_types[i] == "dur_gamma0") {
+      response <- interactions[, i]
+      prior_matrix2[i, ] <- make_prior(response = response,
+                                       type = "dur_gamma0",
+                                       obseff = obseff[, i])
+    }
   }
 
   if (!is.null(colnames(mats[[1]]))) {
@@ -328,11 +356,12 @@ make_stan_data_from_matrices <- function(mats,
               beta_shape_pos = beta_shape_pos_mod,
               beta_shape_n = sum(beta_shape_pos > 0),
               # individual/dyad level predictors:
-              indi_cat_pred = 0, # binary
-              indi_covariate_pred = 0, # continuous
-              dyad_cat_pred = 0,
-              dyad_covariate_pred = 0,
+              # indi_cat_pred = 0, # binary
+              # indi_covariate_pred = 0, # continuous
+              # dyad_cat_pred = 0,
+              # dyad_covariate_pred = 0,
               prior_matrix = prior_matrix,
+              prior_matrix2 = prior_matrix2,
               id_codes = vec,
               beh_names = vec_behaviors,
               removed_dyads = removed_dyads,

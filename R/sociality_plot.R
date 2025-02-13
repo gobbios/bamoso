@@ -58,7 +58,8 @@ sociality_plot <- function(mod_res,
                            which_beh = NULL,
                            which_cor = NULL,
                            xcols = NULL,
-                           add_prior = FALSE) {
+                           add_prior = FALSE
+                           ) {
 
   if (is.null(xcols)) xcols <- c("#3B99B1B3", "#EACB2BB3")
   # hcl.colors(3, palette = "zissou1", alpha = 0.7)[1:2]
@@ -84,6 +85,9 @@ sociality_plot <- function(mod_res,
     if (length(which_cor) != 2) {
       stop ("need to select two behaviors for correlation", call. = FALSE)
     }
+    if (max(which_cor) > standat$n_beh) {
+      stop ("can't find the correlation", call. = FALSE)
+    }
     m <- matrix(0, ncol = standat$n_beh, nrow = standat$n_beh)
     m[upper.tri(m)] <- seq_len(sum(upper.tri(m)))
     index <- m[which_cor[1], which_cor[2]]
@@ -108,9 +112,11 @@ sociality_plot <- function(mod_res,
     }
   }
 
+  xxlab <- "estimated SD"
+  if (is_a_cor_plot) xxlab <- "estimated correlation"
 
   plot(0, 0, xlim = xlim, ylim = c(0, max(p1$y, p2$y) * 1.05),
-       type = "n", xaxs = "i", yaxs = "i", xlab = "estimated SD",
+       type = "n", xaxs = "i", yaxs = "i", xlab = xxlab,
        ylab = "density", axes = FALSE, main = "")
   if (do_legend) {
     tit <- ""
@@ -152,6 +158,11 @@ sociality_plot <- function(mod_res,
       pr <- density(pr, adjust = 2)
       polygon(pr, border = "grey")
     }
+    if (!is.null(which_cor)) {
+      aux <- sample(lkjpriors[, "2"], 1000) # that's the current prior in interactions_cor
+      polygon(density(aux, adjust = 1.2), border = 'grey')
+    }
+
   }
 
   box(bty = "l")

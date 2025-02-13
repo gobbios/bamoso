@@ -4,7 +4,7 @@
 \alias{make_prior}
 \title{set prior distributions for intercept parameters}
 \usage{
-make_prior(response, type, obseff = NULL)
+make_prior(response, type, obseff = NULL, second = FALSE)
 }
 \arguments{
 \item{response}{numeric vector with the response data}
@@ -15,6 +15,10 @@ make_prior(response, type, obseff = NULL)
 \item{obseff}{numeric vector with offset values for \code{"count"}
 and \code{"dur_gamma"} data, or with number of 'trials' for
 \code{"prop"}}
+
+\item{second}{logical (default is \code{FALSE}) for flagging generating
+second set of priors (currently only relevant for
+\code{"dur_gamma0"})}
 }
 \value{
 two values for mean (location) and spread (scale).
@@ -25,8 +29,8 @@ set prior distributions for intercept parameters
 \details{
 The resulting values can be used to set priors for the intercept
 values in the form of \code{student_t(3, location, scale)}.
-The values produced here are fairly similar to the ones produced
-by \code{brms}.
+The values produced here are fairly similar to the default ones
+produced by \code{brms}.
 }
 \examples{
 s <- generate_data(n_ids = 10, n_beh = 1, behav_types = "count",
