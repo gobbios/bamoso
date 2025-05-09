@@ -69,8 +69,6 @@ model {
   vector[n_dyads] lp = rep_vector(0.0, n_dyads);
   vector[n_dyads] indi_sums = rep_vector(0.0, n_dyads);
 
-
-
   for (i in 1:n_beh) {
     lp = rep_vector(0.0, n_dyads);
     // indi_sums = sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1], i] + indi_soc_vals[dyads_navi[, 2], i]);

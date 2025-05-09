@@ -99,9 +99,9 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
   m[lower.tri(m)] <- sri
   m <- m + t(m)
   nvec <- rep(1, ncol(m))
-  x1 <- outer(colSums(m), rowSums(m)) #sum(assm,2)*sum(assm,1)
-  x2 <- outer(nvec, rowSums(m)) # ones(nuu,1)*sum(assm,1)
-  x3 <- outer(colSums(m), nvec) # sum(assm,2)*ones(1,nuu)
+  x1 <- outer(colSums(m), rowSums(m)) # matlab: sum(assm,2)*sum(assm,1)
+  x2 <- outer(nvec, rowSums(m)) # matlab: ones(nuu,1)*sum(assm,1)
+  x3 <- outer(colSums(m), nvec) # matlab: sum(assm,2)*ones(1,nuu)
   y <- log(x1 - (x2 + x3 - m) * m)
   greg_pred_sri <- y[lower.tri(y)]
   # fix occasional problematic cases (cf. matlab code, genaffil.m (l 313))
@@ -114,9 +114,9 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
   m[lower.tri(m)] <- hwi
   m <- m + t(m)
   nvec <- rep(1, ncol(m))
-  x1 <- outer(colSums(m), rowSums(m)) #sum(assm,2)*sum(assm,1)
-  x2 <- outer(nvec, rowSums(m)) # ones(nuu,1)*sum(assm,1)
-  x3 <- outer(colSums(m), nvec) # sum(assm,2)*ones(1,nuu)
+  x1 <- outer(colSums(m), rowSums(m)) # matlab: sum(assm,2)*sum(assm,1)
+  x2 <- outer(nvec, rowSums(m)) # matlab: ones(nuu,1)*sum(assm,1)
+  x3 <- outer(colSums(m), nvec) # matlab: sum(assm,2)*ones(1,nuu)
   y <- log(x1 - (x2 + x3 - m) * m)
   greg_pred_hwi <- y[lower.tri(y)]
   # fix occasional problematic cases (cf. matlab code, genaffil.m (l 313))
@@ -126,10 +126,9 @@ asso_indices <- function(xdata, loop = TRUE, out_net = NULL) {
 
   # create a column that allows ordering in an alternative way that reflect
   #   how dyad indices were created (either with 'combn' or with
-  #   'which(lower.tri(m), arr.ind = TRUE)'
+  #   sth. like: 'which(lower.tri(m), arr.ind = TRUE)'
   alt_dyads <- which(upper.tri(matrix(0, ncol(xdata), ncol(xdata))),
                      arr.ind = TRUE)
-  # alt_order <- integer(nrow(dyads))
   alt_order <- apply(dyads, 1, function(x) {
     which(alt_dyads[, 1] == x[1] & alt_dyads[, 2] == x[2])
   })

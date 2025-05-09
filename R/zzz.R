@@ -1,6 +1,5 @@
 utils::globalVariables("lkjpriors")
 
-
 #' grooming matrices and observation effort for four macaque species
 #'
 #' @format a list with four items. Each item is a list itself with one grooming

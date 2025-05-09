@@ -150,9 +150,11 @@ check_data <- function(mats,
       # compare names across the matrices
       xtest2 <- apply(ndat, 1, function(x) length(unique(na.omit(x))))
       if (isTRUE(any(xtest2 != 1))) {
-        cat("name mismatch found between matrices or between rows and columns of the same matrix\n")
+        cat("name mismatch found between matrices or between rows and columns",
+            "of the same matrix\n")
       } else {
-        cat("all interaction matrices have matching column and row names (good)\n")
+        cat("all interaction matrices have matching column and",
+            "row names (good)\n")
       }
     }
   }
@@ -161,7 +163,8 @@ check_data <- function(mats,
   if (length(tot) == 1) {
     message("found ", tot, " individuals in all data sources (good)")
   } else {
-    stop("found different numbers of individuals across the provided data sources", call. = FALSE)
+    stop("found different numbers of individuals across the provided ",
+         "data sources", call. = FALSE)
   }
 
 

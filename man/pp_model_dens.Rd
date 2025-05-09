@@ -11,6 +11,8 @@ pp_model_dens(
   plot_draws = TRUE,
   xlim = NULL,
   ylim = NULL,
+  xlab = "behaviour prop/duration/freq(?)",
+  ylab = "",
   xadjust = NULL,
   selected_id = NULL,
   print_info = FALSE,
@@ -32,7 +34,9 @@ be plotted. Default is \code{1}, i.e. the first behavior.}
 from the data. Default is \code{NULL} (take values from the
 model and data)}
 
-\item{xadjust}{numeric}
+\item{xlab, ylab}{character, axis labels}
+
+\item{xadjust}{numeric, \code{adjust} parameter for \code{\link{density}}}
 
 \item{selected_id}{character of length 1, if provided: plot only data for
 that individual. If left at its default (\code{NULL}),

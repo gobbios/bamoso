@@ -73,7 +73,8 @@ extract_samples <- function(mod_res,
 
   if (standat$n_cors == 0) {
     if ("indi_cors" %in% what || "dyad_cors" %in% what) {
-      message("model doesn't contain correlations (removing 'indi_cors' and/or 'dyad_cors' from argument 'what = ')\n")
+      message("model doesn't contain correlations (removing 'indi_cors' ",
+              "and/or 'dyad_cors' from argument 'what = ')\n")
       what <- what[what != "indi_cors"]
       what <- what[what != "dyad_cors"]
     }
@@ -91,7 +92,7 @@ extract_samples <- function(mod_res,
                     arr.ind = TRUE)
     xnames <- apply(xindex, 1, function(x) {
       paste(bnames[x[1]], bnames[x[2]], sep = "_X_")
-      })
+    })
 
     x <- mod_res$draws(variables = "cors_indi", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = standat$n_cors)

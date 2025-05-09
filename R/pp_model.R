@@ -47,10 +47,10 @@ pp_model <- function(mod_res,
                                format = "matrix"))
   p <- p[, grepl(paste0(",", xvar, "\\]", collapse = ""), colnames(p))]
   # remove overflow cases if any
-  xtest <- !is.na(rowSums(p))
+  xtest <- is.na(rowSums(p))
   if (any(xtest)) {
     if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
-    p <- p[xtest, , drop = FALSE]
+    p <- p[!xtest, , drop = FALSE]
   }
 
   # deal with individual selection
@@ -80,9 +80,10 @@ pp_model <- function(mod_res,
 
 
   # transform everything into bins...
-  pd <- as.matrix(t(apply(p, 1, function(z) table(cut(z,
-                                                      breaks = x$breaks,
-                                                      include.lowest = TRUE)))))
+  pd <- as.matrix(t(apply(p, 1, function(z) {
+    table(cut(z, breaks = x$breaks, include.lowest = TRUE))
+  }
+  )))
   dimnames(pd) <- NULL
 
   pd <- apply(pd, 2, quantile, probs = c(0.055, 0.5, 0.945))

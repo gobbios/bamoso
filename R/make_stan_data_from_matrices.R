@@ -13,7 +13,9 @@
 #'                    \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 #'                    At its default all behaviors are considered
 #'                    to be \code{"count"}. There is also experimental support
-#'                    for \code{"dur_gamma0"} (zero augmented durations).
+#'                    for \code{"dur_gamma0"} (zero augmented durations
+#'                    ("mixture")) and \code{"binary"}, i.e. simple binary
+#'                    'associations'/interactions.
 #' @param indi_cat_pred vector with binary individual-
 #'                      level predictor. Must contain one value per individual
 #'                      and can only reflect two categories (as 0's and 1's)!
@@ -174,7 +176,7 @@ make_stan_data_from_matrices <- function(mats,
   if (length(behav_types) != n_beh) {
     stop("require exactly ", n_beh, " 'behave_types' specified")
   }
-  if (!all(behav_types %in% c("count", "prop", "dur_gamma", "dur_gamma0", "dur_beta"))) {
+  if (!all(behav_types %in% c("count", "prop", "dur_gamma", "dur_gamma0", "dur_beta", "binary"))) {
     stop("unknown behavior type supplied")
   }
 
@@ -183,6 +185,7 @@ make_stan_data_from_matrices <- function(mats,
   behav_types_num[behav_types == "prop"] <- 2
   behav_types_num[behav_types == "dur_gamma"] <- 3
   behav_types_num[behav_types == "dur_beta"] <- 4
+  behav_types_num[behav_types == "binary"] <- 6
 
   # indexing for optional shape/dispersion parameters
   gamma_shape <- logical(n_beh)
@@ -236,6 +239,31 @@ make_stan_data_from_matrices <- function(mats,
     }
   }
 
+  ## check for pot. problems wrt all(0) or all(!0)
+  for (i in seq_len(n_beh)) {
+    if (behav_types[i] == "dur_gamma0") {
+      if (all(interactions[, i] > 0)) {
+        warning("'dur_gamma0' without zero values detected ",
+                "(this might not be a problem)")
+      }
+      if (all(interactions[, i] == 0)) {
+        warning("'dur_gamma0' with only zero-values detected ",
+                "(this is likely going be a problem for fitting ",
+                "the default model)")
+      }
+    }
+    if (behav_types[i] == "binary") {
+      if (all(interactions[, i] == 0)) {
+        warning("'binary' with only 0 values detected")
+      }
+      if (all(interactions[, i] == 1)) {
+        warning("'binary' with all values being 1 detected")
+      }
+    }
+  }
+
+
+
   # deal with observation effort -------------
   # 1) supplied as single vector or matrix (applies to all behaviors equally)
   if (!is.list(sdata)) {
@@ -280,11 +308,6 @@ make_stan_data_from_matrices <- function(mats,
     }
   # }
 
-  # set
-
-
-
-
   # filter for non-NA dyads
   # do it at the beginning of the function
   # this an index for those *dyads* that have non-NA values
@@ -315,7 +338,9 @@ make_stan_data_from_matrices <- function(mats,
       response <- interactions[, i]
       prior_matrix2[i, ] <- make_prior(response = response,
                                        type = "dur_gamma0",
-                                       obseff = obseff[, i])
+                                       obseff = obseff_dat[, i]
+                                       # obseff = obseff[, i]
+                                       )
     }
   }
 
@@ -365,7 +390,8 @@ make_stan_data_from_matrices <- function(mats,
               id_codes = vec,
               beh_names = vec_behaviors,
               removed_dyads = removed_dyads,
-              n_cors = 0)
+              n_cors = 0,
+              prior_only = 0)
 
   if (!is.null(indi_cat_pred)) {
     out$indi_cat_pred <- indi_cat_pred

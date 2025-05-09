@@ -5,7 +5,7 @@
 #' @param behav_types character vector of length \code{n_beh} that describes
 #'        the kind of data to be generated. Possible values are \code{"prop"},
 #'        \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
-#'        There is also an experimental \code{"dur_gamma0"}.
+#'        There are also experimental \code{"dur_gamma0"} and \code{"binary"}.
 #' @param indi_sd numeric, the SD for the individual component. Must be
 #'                positive. Default is a random value
 #'                (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
@@ -51,10 +51,11 @@
 #' @param count_obseff numeric of length 1 or 2, default is \code{1}, i.e.
 #'          per dyad there is 1 unit of observation effort (think 'hours').
 #'          If numeric of length 2, each dyad get its own observation effort,
-#'          sampled as uniform real between the two values. This is only
-#'          relevant for data generated as counts.
+#'          sampled as uniform real between the two values. This is
+#'          relevant for data generated as counts (and also \code{"dur_gamma"},
+#'          \code{"dur_gamma0"} and \code{"binary"}).
 #' @param exact logical, default is \code{TRUE}: should the varying intercepts
-#'          for \code{indi_sd} and \code{dyad_sd} be rescaled so that they
+#'          for \code{indi_sd} and \code{dyad_sd} be re-scaled so that they
 #'          have means of 0 and exact SD as supplied.
 #' @param force_z_predictors logical, force all (if there are any) covariates
 #'          (individual or dyad level features) to be z-standardized.
@@ -66,7 +67,8 @@
 #' \code{"dur_gamma"} and \code{"dur_beta"}.
 #'
 #' Experimentally, there is also \code{"dur_gamma0"} which is a mixture
-#' of gamma durations and Bernoulli: "duration of behavior if it occurred".
+#' of gamma durations and Bernoulli: "duration of behavior if it occurred" and
+#' a 'pure' Bernoulli ("interacted or not").
 #'
 #' For the dispersion parameters the input vector must be of the same
 #' length and the indexing must match \code{behav_types}. For example,
@@ -216,7 +218,7 @@ generate_data <- function(n_ids = NULL,
   # some checks
   # dealing with correlated sociality scales
   mulength <- 1
-  if (length(indi_sd) != 1 & length(dyad_sd) != 1) {
+  if (length(indi_sd) != 1 && length(dyad_sd) != 1) {
     if (length(indi_sd) != length(dyad_sd)) stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
     mulength <- ncol(indi_sd)
   }
@@ -258,6 +260,11 @@ generate_data <- function(n_ids = NULL,
   if ("dur_gamma0" %in% behav_types && length(indi_sd_mat) != 1) {
     stop("can't handle correlations with dur_gamma0")
   }
+
+  if (min(unlist(count_obseff)) < 0) {
+    stop("can't handle negative observation effort!")
+  }
+
 
   # create sociality values (individual-level and dyad-level) ----
 
@@ -346,6 +353,7 @@ generate_data <- function(n_ids = NULL,
   behav_types_num[btypes == "dur_gamma"] <- 3
   behav_types_num[btypes == "dur_beta"] <- 4
   behav_types_num[btypes == "dur_gamma0"] <- 5
+  behav_types_num[btypes == "binary"] <- 6
 
   # indexing for optional shape/dispersion parameters
   gamma_shape <- logical(n_beh)
@@ -367,10 +375,11 @@ generate_data <- function(n_ids = NULL,
       if (length(prop_trials) == 1) {
         obseff[, i] <- prop_trials
       } else {
-        obseff[, i] <- sample(as.integer(prop_trials[1]):as.integer(prop_trials[2]), size = n_dyads, replace = TRUE)
+        obseff[, i] <- sample(as.integer(prop_trials[1]):as.integer(prop_trials[2]),
+                              size = n_dyads, replace = TRUE)
       }
     }
-    if (btypes[i] == "count" || btypes[i] == "dur_gamma0") {
+    if (btypes[i] %in% c("count", "dur_gamma", "dur_gamma0", "binary")) {
       if (length(count_obseff) == 1) {
         obseff[, i] <- count_obseff
       } else {
@@ -406,6 +415,11 @@ generate_data <- function(n_ids = NULL,
         warning("'dur_gamma0' with only zero-values generated (this is gonna be a problem for fitting the default model)")
       }
     }
+    if (btypes[i] == "binary") {
+      lp_bern <- lp + beh_intercepts[i]
+      interactions[, i] <- rbinom(n = n_dyads, size = 1, prob = lin2prob(lp_bern, obseff[, i]))
+    }
+
 
     lp_b <- lp + unlist(beh_intercepts[i])[1]
     if (btypes[i] == "count") {
@@ -418,24 +432,6 @@ generate_data <- function(n_ids = NULL,
                                   prob = exp(lp_b) / (1 + exp(lp_b))) # inverse logit...
     }
     if (btypes[i] == "dur_gamma") {
-      # first translate mean (and variance) into shape and rate
-      # dispersion <- 1 / disp_pars_gamma[i]
-      # lp_offs <- exp(lp_b + log(obseff[, i]))
-      # variance <- dispersion * (lp_offs^2)
-      # shape <- (lp_offs^2) / variance
-      # rate <- lp_offs / variance
-      # interactions[, i] <- rgamma(n = n_dyads, shape = shape, rate = rate)
-      #
-      # gamma_shape_pos[i] <- i
-      #
-      # # check for any 0s
-      # if (any(interactions[, i] == 0)) {
-      #   sel <- which(interactions[, i] == 0)
-      #   sel2 <- which(interactions[, i] > 0)
-      #   interactions[sel, i] <- min(interactions[sel2, i])
-      # }
-      #
-
       # use same parameterization as in dur_gamma0
       lb_gamma <- lp + beh_intercepts[i]
       lb_gamma <- lb_gamma + log(obseff[, i])
@@ -466,7 +462,6 @@ generate_data <- function(n_ids = NULL,
 
       beta_shape_pos[i] <- i
     }
-
 
   }
 
@@ -570,7 +565,8 @@ generate_data <- function(n_ids = NULL,
                   id_codes = vec,
                   beh_names = rep(0, n_beh),
                   removed_dyads = removed_dyads,
-                  n_cors = 0
+                  n_cors = 0,
+                  prior_only = 0
                   )
 
   # standat$indi_cat_pred <- 0

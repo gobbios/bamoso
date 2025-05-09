@@ -32,7 +32,7 @@ generate_data(
 \item{behav_types}{character vector of length \code{n_beh} that describes
 the kind of data to be generated. Possible values are \code{"prop"},
 \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
-There is also an experimental \code{"dur_gamma0"}.}
+There are also experimental \code{"dur_gamma0"} and \code{"binary"}.}
 
 \item{indi_sd}{numeric, the SD for the individual component. Must be
 positive. Default is a random value
@@ -90,11 +90,12 @@ values supplied. Only relevant for data generated as proportions.}
 \item{count_obseff}{numeric of length 1 or 2, default is \code{1}, i.e.
 per dyad there is 1 unit of observation effort (think 'hours').
 If numeric of length 2, each dyad get its own observation effort,
-sampled as uniform real between the two values. This is only
-relevant for data generated as counts.}
+sampled as uniform real between the two values. This is
+relevant for data generated as counts (and also \code{"dur_gamma"},
+\code{"dur_gamma0"} and \code{"binary"}).}
 
 \item{exact}{logical, default is \code{TRUE}: should the varying intercepts
-for \code{indi_sd} and \code{dyad_sd} be rescaled so that they
+for \code{indi_sd} and \code{dyad_sd} be re-scaled so that they
 have means of 0 and exact SD as supplied.}
 
 \item{force_z_predictors}{logical, force all (if there are any) covariates
@@ -123,7 +124,8 @@ are supported are \code{"count"}, \code{"prop"},
 \code{"dur_gamma"} and \code{"dur_beta"}.
 
 Experimentally, there is also \code{"dur_gamma0"} which is a mixture
-of gamma durations and Bernoulli: "duration of behavior if it occurred".
+of gamma durations and Bernoulli: "duration of behavior if it occurred" and
+a 'pure' Bernoulli ("interacted or not").
 
 For the dispersion parameters the input vector must be of the same
 length and the indexing must match \code{behav_types}. For example,

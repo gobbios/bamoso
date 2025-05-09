@@ -61,11 +61,11 @@ make_prior <- function(response, type, obseff = NULL, second = FALSE) {
     return(c(location = location, scale = scale))
   }
 
-  if (type == "dur_gamma0") {
+  if (type == "dur_gamma0" || type == "binary") {
     scale <- 2.5
     binresp <- mean(as.numeric(response > 0))
     meanobseff <- 1
-    if (is.null(obseff)) meanobseff <- mean(obseff)
+    if (!is.null(obseff)) meanobseff <- mean(obseff)
     location <- round(prob2lin(binresp, meanobseff), 1)
   }
 

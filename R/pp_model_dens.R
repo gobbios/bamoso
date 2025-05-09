@@ -7,7 +7,8 @@
 #' @param xlim,ylim numeric, each of length two. Overrides axis limits gleaned
 #'                  from the data. Default is \code{NULL} (take values from the
 #'                  model and data)
-#' @param xadjust numeric
+#' @param xlab,ylab character, axis labels
+#' @param xadjust numeric, \code{adjust} parameter for \code{\link{density}}
 #' @param plot_draws logical, should the random draws actually be plotted
 #'                   (default is \code{TRUE})
 #' @param selected_id character of length 1, if provided: plot only data for
@@ -31,6 +32,8 @@ pp_model_dens <- function(mod_res,
                           plot_draws = TRUE,
                           xlim = NULL,
                           ylim = NULL,
+                          xlab = "behaviour prop/duration/freq(?)",
+                          ylab = "",
                           xadjust = NULL,
                           selected_id = NULL,
                           print_info = FALSE,
@@ -46,8 +49,14 @@ pp_model_dens <- function(mod_res,
   if (is.null(xadjust)) xadjust <- 1 # density()'s default
   if (length(selected_id) > 1) stop("please select only one id")
 
-  if (standat$behav_types[xvar] %in% c(3, 4)) {
-    x <- suppressWarnings(density(standat$interactions_cont[, xvar],
+  if (standat$behav_types[xvar] %in% c(3, 4, 5)) {
+    sel <- seq_len(nrow(standat$interactions_cont))
+    if (standat$behav_types[xvar] %in% c(5)) {
+      # only use non-zero data for gamma mixture
+      sel <- which(standat$interactions_cont[, xvar] > 0)
+    }
+
+    x <- suppressWarnings(density(standat$interactions_cont[sel, xvar],
                                   adjust = xadjust, ...))
     p <- as.matrix(mod_res$draws(variables = "interactions_pred_cont",
                                  format = "matrix"))
@@ -59,11 +68,18 @@ pp_model_dens <- function(mod_res,
   }
 
   p <- p[, grepl(paste0(",", xvar, "\\]", collapse = ""), colnames(p))]
+  if (standat$behav_types[xvar] %in% c(5)) {
+    # only use non-zero data for gamma mixture
+    p <- p[, sel]
+  }
+
+
+
   # remove overflow cases if any
-  xtest <- !is.na(rowSums(p))
+  xtest <- is.na(rowSums(p))
   if (any(xtest)) {
     if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
-    p <- p[xtest, , drop = FALSE]
+    p <- p[!xtest, , drop = FALSE]
   }
 
   p <- p[sample(nrow(p), n_draws), ]
@@ -114,6 +130,7 @@ pp_model_dens <- function(mod_res,
 
   suppressWarnings(plot(0, 0, type = "n", axes = FALSE,
                         xlim = xlim, ylim = ylim,
+                        xlab = xlab, ylab = ylab,
                         yaxs = "i", las = 1, bty = "n", xaxs = "i", ...))
   axis(1)
   box(bty = "l")

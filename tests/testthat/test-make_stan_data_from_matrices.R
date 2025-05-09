@@ -80,3 +80,46 @@ test_that("make_stan_data_from_matrices contains the correct list elements", {
 nrow_interactions <- nrow(standat$interactions)
 nrow_interactions_cont <- nrow(standat$interactions_cont)
 
+
+
+## misc
+test_that("make_stan_data_from_matrices contains the correct list elements", {
+  expect_error(generate_data(n_beh = 1, behav_types = "dur_gamma0", count_obseff = c(-0.5, 4)))
+})
+
+
+## handling 0s ----
+test_that("warning when all ints are 0 in dur_gamma0", {
+  x <- suppressWarnings(generate_data(n_ids = 6, n_beh = 1, behav_types = "dur_gamma0", count_obseff = c(0.5, 4)))
+  m <- x$processed$interaction_matrices[[1]]
+  o <- x$processed$obseff_matrices[[1]]
+  m <- m - m # make all zero
+  expect_warning(make_stan_data_from_matrices(mats = list(m), behav_types = "dur_gamma0", obseff = list(o)))
+})
+
+test_that("warning when no 0 in dur_gamma0", {
+  x <- suppressWarnings(generate_data(n_ids = 6, n_beh = 1, behav_types = "dur_gamma0", count_obseff = c(0.5, 4)))
+  m <- x$processed$interaction_matrices[[1]]
+  o <- x$processed$obseff_matrices[[1]]
+  m[upper.tri(m)] <- m[upper.tri(m)] + 0.00001
+  expect_warning(make_stan_data_from_matrices(mats = list(m), behav_types = "dur_gamma0", obseff = list(o)))
+})
+
+test_that("warning when all ints are 0 in binary", {
+  x <- suppressWarnings(generate_data(n_ids = 6, n_beh = 1, behav_types = "binary", count_obseff = c(0.5, 4)))
+  m <- x$processed$interaction_matrices[[1]]
+  o <- x$processed$obseff_matrices[[1]]
+  m <- m - m # make all zero
+  expect_warning(make_stan_data_from_matrices(mats = list(m), behav_types = "binary", obseff = list(o)))
+})
+
+test_that("warning when no 0 in binary", {
+  x <- suppressWarnings(generate_data(n_ids = 6, n_beh = 1, behav_types = "binary", count_obseff = c(0.5, 4)))
+  m <- x$processed$interaction_matrices[[1]]
+  o <- x$processed$obseff_matrices[[1]]
+  m[upper.tri(m)] <- 1
+  expect_warning(make_stan_data_from_matrices(mats = list(m), behav_types = "binary", obseff = list(o)))
+})
+
+
+

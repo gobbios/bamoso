@@ -1,17 +1,17 @@
 # single run for testing, extend to check parameter recovery during development
 # devtools::load_all()
-n <- 1
+n <- 2
 
 test_pars <- data.frame(r = seq_len(n),
-                        do1 = c(FALSE), # TRUE
+                        do1 = c(FALSE, TRUE), # TRUE
                         # do_mix = sample(c(TRUE, FALSE), n, TRUE),
-                        n_ind = sample(c(16, 24, 32), n, TRUE), # 8
+                        n_ind = sample(c(16, 20, 24), n, TRUE), # 8
                         int_gamma = runif(n, -2, 2),
-                        shape_gamma = runif(n, 1, 10),
+                        shape_gamma = runif(n, 1, 20),
                         int_bern = runif(n, -3, 1), # that's the range
                         int_pois = runif(n, -2, 2),
-                        indi_sd = runif(n, 0.2, 1.2),
-                        dyad_sd = runif(n, 0.2, 1.2)
+                        indi_sd = runif(n, 0.8, 1.5),
+                        dyad_sd = runif(n, 0.8, 1.5)
 )
 table(test_pars$n_ind, test_pars$do1)
 est_pars <- test_pars - test_pars
@@ -47,9 +47,8 @@ for (i in sample(seq_len(n))) {
 
   # mm <- cmdstan_model("inst/extdata/interaction_model.stan")
   d <- xx$standat
-  d$prior_only <- 0
   est_pars$bern_prior[i] <- d$prior_matrix[1, 1]
-  xres <- sociality_model(standat = d, parallel_chains = 4,  show_exceptions = F, refresh = 0)
+  xres <- sociality_model(standat = d, parallel_chains = 4, show_exceptions = F, refresh = 0, silent = TRUE)
   # r <- mm$sample(d, parallel_chains = 4,  show_exceptions = F, refresh = 0)
   r <- xres$mod_res
   di <- r$diagnostic_summary(quiet = TRUE)
@@ -57,9 +56,33 @@ for (i in sample(seq_len(n))) {
   est_pars$n_dep[i] <- sum(di$num_max_treedepth)
   est_pars$n_ebfmi[i] <- sum(di$ebfmi < 0.3)
 
+  # digress, look at plots:
+  if (FALSE) {
+    edata <- extract_samples(xres, c("indi_vals", "dyad_vals"))
+
+    zz <- xx$input_data$dyad_data
+    rownames(zz) <- paste0(zz$id1, "_@_", zz$id2)
+    r <- sample(nrow(edata), 1)
+    plot(zz$dyad_soc_vals, edata[r, rownames(zz)])
+    cor(zz$dyad_soc_vals, edata[r, rownames(zz)])
+
+    zz <- xx$input_data$indi_data
+    r <- sample(nrow(edata), 1)
+    rownames(zz) <- paste0(zz$id)
+    plot(zz$indi_soc_vals, edata[r, rownames(zz)])
+    cor(zz$indi_soc_vals, edata[r, rownames(zz)])
+
+  }
+
+
+  temp <- as.numeric(d$interactions_cont[, 1] > 0)
+  qlogis(mean(temp))
   zz <- data.frame(r$summary(c("beh_intercepts", "beh_intercepts_add", "shapes_gamma", "indi_soc_sd", "dyad_soc_sd")))
   zz
 
+  postpairs <- r$draws(c("beh_intercepts[1]", "shapes_gamma_raw[1]", "beh_intercepts_add[1]"), format = "draws_matrix")
+  colnames(postpairs) <- c("int_bern", 'shape_raw', "int_gamma")
+  pairs(postpairs)
   est_pars$int_bern[i] <- zz$median[zz$variable == "beh_intercepts[1]"]
   est_pars$shape_gamma[i] <- zz$median[zz$variable == "shapes_gamma[1]"]
   est_pars$int_gamma[i] <- zz$median[zz$variable == "beh_intercepts_add[1]"]
@@ -86,7 +109,7 @@ if (FALSE) {
 
   cols <- hcl.colors(n = nlevels(as.factor(ori$n_ind)), palette = "viridis")[as.factor(ori$n_ind)]
 
-  plot(est$bern_prior, est$int_bern)
+  plot(est$bern_prior, est$int_bern, pch = c(16, 1)[est$do1 + 1], col = cols)
   abline(0, 1)
 
   plot(ori$indi_sd, est$indi_sd, pch = c(16, 1)[est$do1 + 1], col = cols)
@@ -102,7 +125,6 @@ if (FALSE) {
 
   plot(ori$int_bern, est$int_bern, pch = c(16, 1)[est$do1 + 1], col = cols)
   abline(0, 1)
-  # abline(-0.5, 0.7, col = "grey")
   do_leg()
 
   plot(ori$int_pois, est$int_pois, pch = c(16, 1)[est$do1 + 1], col = cols)
@@ -112,6 +134,9 @@ if (FALSE) {
   plot(ori$shape_gamma, est$shape_gamma, pch = c(16, 1)[est$do1 + 1], col = cols)
   abline(0, 1)
   do_leg()
+
+  # plot(est$int_gamma, est$shape_gamma, pch = c(16, 1)[est$do1 + 1], col = cols)
+  # plot(est$int_bern, est$shape_gamma, pch = c(16, 1)[est$do1 + 1], col = cols)
 
 }
 
