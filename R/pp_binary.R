@@ -139,4 +139,6 @@ pp_binary <- function(mod_res,
          col = 'red', pch = 4, lwd = 2, cex = 1.5)
 
   box(bty = "l")
+
+  invisible(list(observed = obsval, fromdraws = pp_vals))
 }

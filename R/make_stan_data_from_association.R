@@ -52,6 +52,34 @@ make_stan_data_from_association <- function(asso_table,
     if (length(indi_cat_pred) != n_ids) {
       stop("individual-level predictor doesn't have correct length", call. = FALSE)
     }
+  } else {
+    indi_cat_pred <- rep(0, n_ids)
+  }
+  if (!is.null(indi_covariate_pred)) {
+    if (length(indi_covariate_pred) != n_ids) {
+      stop("individual-level predictor doesn't have correct length", call. = FALSE)
+    }
+  } else {
+    indi_covariate_pred <- rep(0, n_ids)
+  }
+
+  if (!is.null(dyad_cat_pred)) {
+    if (length(dyad_cat_pred) != n_dyads) {
+      if (length(as.numeric(as.matrix(dyad_cat_pred))) != (n_ids ^ 2)) {
+        stop("dyad-level predictor doesn't have correct dimensions", call. = FALSE)
+      }
+    }
+  } else {
+    dyad_cat_pred <- rep(0, n_dyads)
+  }
+  if (!is.null(dyad_covariate_pred)) {
+    if (length(dyad_covariate_pred) != n_dyads) {
+      if (length(as.numeric(as.matrix(dyad_covariate_pred))) != (n_ids ^ 2)) {
+        stop("dyad-level predictor doesn't have correct dimensions", call. = FALSE)
+      }
+    }
+  } else {
+    dyad_covariate_pred <- rep(0, n_dyads)
   }
 
 
@@ -126,9 +154,26 @@ make_stan_data_from_association <- function(asso_table,
     out$indi_covariate_pred <- indi_covariate_pred
   }
   if (!is.null(dyad_cat_pred)) {
+    if (is.matrix(dyad_cat_pred)) {
+      if (ncol(dyad_cat_pred) != nrow(dyad_cat_pred)) stop("dyad_cat_pred is not square!", call. = FALSE)
+      temp <- numeric(n_dyads)
+      for (k in seq_len(n_dyads)) {
+        temp[k] <- dyad_cat_pred[index[k, 1], index[k, 2]]
+      }
+      dyad_cat_pred <- temp
+    }
     out$dyad_cat_pred <- dyad_cat_pred
   }
   if (!is.null(dyad_covariate_pred)) {
+    if (is.matrix(dyad_covariate_pred)) {
+      if (ncol(dyad_covariate_pred) != nrow(dyad_covariate_pred)) stop("dyad_covariate_pred is not square!", call. = FALSE)
+      temp <- numeric(n_dyads)
+      for (k in seq_len(n_dyads)) {
+        temp[k] <- dyad_covariate_pred[index[k, 1], index[k, 2]]
+      }
+      dyad_covariate_pred <- temp
+    }
+
     out$dyad_covariate_pred <- dyad_covariate_pred
   }
 

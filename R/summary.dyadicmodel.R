@@ -123,7 +123,7 @@ summary.dyadicmodel <- function(object, ...) {
   }
 
   cat("--------------------\n")
-  diagnostics <- object$mod_res$diagnostic_summary()
+  diagnostics <- object$mod_res$diagnostic_summary(quiet = TRUE)
   if (all(diagnostics$num_divergent == 0) &&
       all(diagnostics$num_max_treedepth == 0) &&
       all(diagnostics$ebfmi > 0.2)) {
@@ -133,7 +133,7 @@ summary.dyadicmodel <- function(object, ...) {
     diags <- FALSE
     msg <- "sampling issues detected (see below)"
   }
-    if (diags) cat(msg, "\n")
+  if (diags) cat(msg, "\n")
   if (!diags) {
     cat(msg, "\n")
     if (interactive()) {

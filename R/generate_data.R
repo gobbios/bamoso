@@ -458,8 +458,6 @@ generate_data <- function(n_ids = NULL,
         sel <- which(interactions[, i] == 0)
         interactions[sel, i] <- interactions[sel, i] + runif(length(sel), 0, 0.00001)
       }
-      # interactions[, i] <- (interactions[, i] * (n_dyads - 1) + 0.5) / n_dyads
-
       beta_shape_pos[i] <- i
     }
 

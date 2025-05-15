@@ -71,7 +71,8 @@ parameters {
   // vector[gamma_shape_n] aux_baserates_unconstrained; // baserates
 
   vector[gamma_shape_n] shapes_gamma_raw; // unconstrained (<lower=0>)
-  vector<lower=0>[beta_shape_n] shapes_beta;
+  vector<lower=0>[beta_shape_n] shapes_beta; // unconstrained (<lower=0>)
+  // vector[beta_shape_n] shapes_beta_raw; // unconstrained (<lower=0>)
 }
 transformed parameters {
   vector[n_ids] indi_soc_vals;  // actual blups
@@ -79,6 +80,7 @@ transformed parameters {
   vector[n_dyads] scaled_indi_sums;  // sums of dyadic values, scaled
   // vector[gamma_shape_n] aux_baserates = inv_logit(aux_baserates_unconstrained); // baserates
   vector<lower=0>[gamma_shape_n] shapes_gamma = exp(shapes_gamma_raw);
+  // vector<lower=0>[beta_shape_n] shapes_beta = exp(shapes_beta_raw);
   indi_soc_vals = (indi_soc_sd * indi_soc_vals_z);
   dyad_soc_vals = (dyad_soc_sd * dyad_soc_vals_z);
   scaled_indi_sums = sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]);
@@ -137,10 +139,12 @@ model {
     // extra priors for shape/dispersion parameters
     if (behav_types[i] == 3) {
       // shapes[gamma_shape_pos[i]] ~ gamma(0.01, 0.01);
-      shapes_gamma_raw[gamma_shape_pos[i]] ~ normal(1, 1);
+      // shapes_gamma_raw[gamma_shape_pos[i]] ~ normal(1, 1);
+      shapes_gamma_raw[gamma_shape_pos[i]] ~ student_t(4, 1, 1);
     }
     if (behav_types[i] == 4) {
       shapes_beta[beta_shape_pos[i]] ~ gamma(0.1, 0.1);
+      // shapes_beta_raw[beta_shape_pos[i]] ~ student_t(4, 1, 1);
     }
     if (behav_types[i] == 5) {
       // gamma prior comes from prior_matrix2

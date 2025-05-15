@@ -7,3 +7,4 @@ data-raw/
 intro.pdf
 dump/
 ^README\.Rmd$
+vignette_candidates/

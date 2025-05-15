@@ -390,7 +390,7 @@ model {
 
   // get to associations: individual and dyadic sociality contributions
   seen_together ~ binomial_logit(seen_either, period_intercepts[navi_dyads[, 4]] +
-                                                0.5 * indi2indisum(n_dyads_over_periods, n_ids_over_periods, navi_dyads[, 4], navi_dyads[, 1], navi_dyads[, 2],
+                                                sqrt(0.5) * indi2indisum(n_dyads_over_periods, n_ids_over_periods, navi_dyads[, 4], navi_dyads[, 1], navi_dyads[, 2],
                                                                    indi_soc_vals, navi2[, 1], navi2[, 2]) +
                                                 dyad_soc_vals);
 
@@ -503,6 +503,6 @@ generated quantities {
                                   navi2[, 1], navi2[, 2]);
   // regenerate output for association data
   seen_together_rep = binomial_rng(seen_either,
-      inv_logit(dyad_soc_vals + (0.5 * indi_sums_for_pp) + period_intercepts[navi_dyads[, 4]]));
+      inv_logit(dyad_soc_vals + (sqrt(0.5) * indi_sums_for_pp) + period_intercepts[navi_dyads[, 4]]));
 
 }

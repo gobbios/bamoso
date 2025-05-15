@@ -23,6 +23,9 @@
 #' @param refresh refresh argument
 #' @param iter_warmup iter_warmup argument
 #' @param iter_sampling iter_sampling argument
+#' @param testing_mode logical, default is \code{FALSE}. If \code{TRUE}: runs
+#'          the model as prior simulation which illustrates how the function
+#'          works while taking less time.
 #'
 #' @importFrom utils capture.output
 #'
@@ -54,34 +57,57 @@
 #'
 #' @export
 #' @examples
-#' # example code
-#' for (i in 1:20) {
-#'   sim_foo(silent = TRUE, outpath = "~/Desktop/bamosoeval")
+#' \dontrun{
+#' # path to results
+#' # outpath <- "~/Desktop/bamosoeval" # probably doesn't exist on your computer
+#' outpath <- tempdir() # default in function
+#'
+#' # use testing mode (faster, but only as demo)
+#' for (i in 1:5) {
+#'   sim_foo(silent = TRUE, outpath = outpath, testing_mode = TRUE)
+#' }
+#'
+#' # analyse (read inidivual sim runs and collate to single data frame)
+#' l <- list.files(outpath, pattern = ".rds", full.names = TRUE)
+#' xdata <- sapply(l, function(x) {
+#'   zz <- readRDS(x)
+#'   zz$results
+#' }, simplify = FALSE)
+#' xdata <- do.call("rbind", xdata)
+#'
+#' # plot results
+#' plot(xdata$indi_sd, xdata$indi_sd_est,
+#'      xlab = 'true gregariousness SD', ylab = 'estimated SD')
+#' abline(0, 1)
+#' plot(xdata$intercept1, xdata$intercept1_est,
+#'      xlab = 'true intercept (behavior 1)', ylab = 'estimated intercept (behavior 1)')
+#' abline(0, 1)
 #' }
 
 # indi_sd = runif(1, 0.1, 2)
 # dyad_sd = runif(1, 0.1, 2)
 # n_beh = sample(3, 1)
-# intercepts = runif(n_beh, -2, 2)
-# n_ids = 13
-# disp_pars_gamma = runif(n_beh, 1, 10)
+# intercepts = runif(n_beh, -2, 1)
+# n_ids = sample(5:30, 1)
+# disp_pars_gamma = runif(n_beh, 1, 20)
 # disp_pars_beta = runif(n_beh, 5, 30)
 # outpath = NULL
 # outfilename = NULL
 # silent = FALSE
 # diagnostics = TRUE
-# parallel_chains = 1
+# parallel_chains = 4
 # refresh = 200
 # iter_warmup = 2000
 # iter_sampling = 1000
+# testing_mode = FALSE
 
 sim_foo <- function(...,
-                    n_ids = sample(8:32, 1),
-                    indi_sd = runif(1, 0.1, 2),
-                    dyad_sd = runif(1, 0.1, 2),
+                    n_ids = sample(5:30, 1),
+                    indi_sd = runif(1, 0.1, 3),
+                    dyad_sd = runif(1, 0.1, 3),
                     n_beh = sample(3, 1),
-                    intercepts = runif(n_beh, -2, 2),
-                    disp_pars_gamma = runif(n_beh, 1, 10),
+                    intercepts = runif(n_beh, -3, 1),
+                    disp_pars_gamma = runif(n_beh, 1, 20),
                     disp_pars_beta = runif(n_beh, 5, 30),
                     outpath = NULL,
                     outfilename = NULL,
@@ -90,8 +116,15 @@ sim_foo <- function(...,
                     parallel_chains = 1,
                     refresh = 0,
                     iter_warmup = 2000,
-                    iter_sampling = 1000
+                    iter_sampling = 1000,
+                    testing_mode = FALSE
                     ) {
+
+  if (testing_mode) {
+    if (interactive()) {
+      message("you are in testing mode: the posteriors are not conditioned on the data")
+    }
+  }
 
   behav_types <- sample(c("count", "prop", "dur_gamma", "dur_beta"), n_beh, replace = TRUE)
 
@@ -106,8 +139,8 @@ sim_foo <- function(...,
                            dyad_sd = dyad_sd,
                            disp_pars_gamma = disp_pars_gamma,
                            disp_pars_beta = disp_pars_beta,
-
-                           ...)
+                           # ...
+                           )
     if (!sdata$input_data$empty) good_to_go <- TRUE
   }
 
@@ -131,9 +164,11 @@ sim_foo <- function(...,
                          refresh = refresh,
                          iter_warmup = iter_warmup,
                          iter_sampling = iter_sampling,
-                         adapt_delta = 0.9,
-                         max_treedepth = 12,
-                         seed = seed)
+                         adapt_delta = 0.98,
+                         max_treedepth = 14,
+                         seed = seed,
+                         prior_sim = testing_mode
+                         )
   } else {
     r <- sociality_model(standat = sdata$standat,
                          silent = FALSE,
@@ -143,11 +178,14 @@ sim_foo <- function(...,
                          refresh = refresh,
                          iter_warmup = iter_warmup,
                          iter_sampling = iter_sampling,
-                         adapt_delta = 0.9,
-                         max_treedepth = 12,
-                         seed = seed)
-
+                         adapt_delta = 0.98,
+                         max_treedepth = 14,
+                         seed = seed,
+                         prior_sim = testing_mode
+                         )
   }
+
+
 
   # extract results
   xres_draws <- r$mod_res$draws(format = "draws_matrix")
@@ -177,13 +215,20 @@ sim_foo <- function(...,
   }
 
   # collect relevant info
+  ## width of posteriors for soc components
+  w1 <- quantile(c(xres_draws[, "indi_soc_sd"]), 0.0945) - quantile(c(xres_draws[, "indi_soc_sd"]), 0.055)
+  w2 <- quantile(c(xres_draws[, "dyad_soc_sd"]), 0.0945) - quantile(c(xres_draws[, "dyad_soc_sd"]), 0.055)
+
+
   xres_results <- data.frame(label = fn,
                              n_ids = sdata$standat$n_ids,
                              n_beh = n_beh,
                              indi_sd = sdata$input_data$indi_sd,
                              indi_sd_est = median(xres_draws[, "indi_soc_sd"]),
+                             width_indisd = w1,
                              dyad_sd = sdata$input_data$dyad_sd,
                              dyad_sd_est = median(xres_draws[, "dyad_soc_sd"]),
+                             width_dyadsd = w2,
                              intercept1 = intercepts[1],
                              intercept2 = intercepts[2],
                              intercept3 = intercepts[3],
@@ -197,7 +242,8 @@ sim_foo <- function(...,
                              divergent = sum(d$num_divergent),
                              treedepth = sum(d$num_max_treedepth),
                              ebfmi = sum(d$ebfmi < 0.2),
-                             seed = seed
+                             seed = seed,
+                             behav_types = paste(sort(behav_types), collapse = ";")
   )
 
   if (is.null(outpath)) {
