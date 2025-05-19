@@ -3,9 +3,7 @@
 
 # `bamoso`: Bayesian modelling of animal social interactions
 
-$$
-\textrm{interactions}_{ij} = \textrm{baseline} + \sqrt{0.5} \times (\textrm{individual sociality}_i + \textrm{individual sociality}_j) + \textrm{dyadic sociality}_{ij}
-$$
+<img src="man/figures/README-eq.png" width="100%" />
 
 supported data types for observed interactions:
 
