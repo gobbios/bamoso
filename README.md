@@ -1,9 +1,25 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# bamoso
+# `bamoso`: Bayesian modelling of animal social interactions
 
-Bayesian modelling of animal social interactions
+$$
+\textrm{interactions}_{ij} = \textrm{baseline} + \sqrt{0.5} \times (\textrm{individual sociality}_i + \textrm{individual sociality}_j) + \textrm{dyadic sociality}_{ij}
+$$
+
+supported data types for observed interactions:
+
+- frequency (Poisson)
+
+- discrete proportion (Binomial)
+
+- continuous proportion (Beta)
+
+- duration (Gamma)
+
+- binary (Bernoulli) (experimental)
+
+- duration with zeros (mixture Bernoulli/Gamma) (experimental)
 
 ## Installation
 
@@ -71,6 +87,7 @@ vignette("intro", package = "bamoso")
 
 <img src="man/figures/README-groomdatasetplot-1.png" alt="\label{fig:syl_net}Example data set. Grooming frequencies on the left and dyadic observation hours on the right." width="60%" />
 <p class="caption">
+
 Example data set. Grooming frequencies on the left and dyadic
 observation hours on the right.
 </p>
@@ -124,6 +141,7 @@ pp_model_stat(res, stat = "max", xlab = "maximum number of grooming bouts",
 
 <img src="man/figures/README-ppcheck-1.png" alt="\label{fig:syl_net_pp}Posterior predictive checks for Barbary macaque grooming data. On the left: bars represent observed grooming frequencies. The circles represent the median frequencies predicted by the model and the vertical bars the 89\% interval around these predictions. One the right: the histogram is the posterior distribution of the maximum number of grooming bouts predicted by the model across all posterior samples. The red line indicates the observed value in the data." width="80%" />
 <p class="caption">
+
 Posterior predictive checks for Barbary macaque grooming data. On the
 left: bars represent observed grooming frequencies. The circles
 represent the median frequencies predicted by the model and the vertical
@@ -136,13 +154,14 @@ red line indicates the observed value in the data.
 </div>
 
 ``` r
-sociality_plot(res)
+sociality_plot(res, add_prior = TRUE)
 ```
 
 <div class="figure" style="text-align: center">
 
 <img src="man/figures/README-socplot-1.png" alt="\label{fig:syl_net_soc}Posteriors for the two sociality components. Variation among dyads is larger than variation among individuals." width="50%" />
 <p class="caption">
+
 Posteriors for the two sociality components. Variation among dyads is
 larger than variation among individuals.
 </p>
@@ -158,6 +177,7 @@ ridge_plot(res, greg = FALSE, sel_subset = 10:20, vert_exp = 15)
 
 <img src="man/figures/README-ridgeplot-1.png" alt="\label{fig:syl_net_ridge}Posteriors for the two sociality components. The affinity distributions on the right only reflect a subset of 10 dyads." width="80%" />
 <p class="caption">
+
 Posteriors for the two sociality components. The affinity distributions
 on the right only reflect a subset of 10 dyads.
 </p>

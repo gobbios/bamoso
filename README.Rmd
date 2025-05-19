@@ -21,10 +21,25 @@ knitr::opts_chunk$set(
 )
 ```
 
-# bamoso
-Bayesian modelling of animal social interactions
+# `bamoso`: Bayesian modelling of animal social interactions
 
+$$
+\textrm{interactions}_{ij} = \textrm{baseline} + \sqrt{0.5} \times (\textrm{individual sociality}_i + \textrm{individual sociality}_j) + \textrm{dyadic sociality}_{ij}
+$$
 
+supported data types for observed interactions:
+  
+  - frequency (Poisson)
+  
+  - discrete proportion (Binomial)
+  
+  - continuous proportion (Beta)
+  
+  - duration (Gamma)
+  
+  - binary (Bernoulli) (experimental)
+  
+  - duration with zeros (mixture Bernoulli/Gamma) (experimental)
 
 ## Installation
 
@@ -34,7 +49,6 @@ Check out the [getting started-guide](https://mc-stan.org/cmdstanr/articles/cmds
 Also [this document](https://mc-stan.org/docs/cmdstan-guide/cmdstan-installation.html#cpp-toolchain) might be helpful.
 
 Then install `cmdstanr`.
-
 
 ```{r, eval=FALSE}
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
@@ -101,8 +115,6 @@ groom_mat <- grooming$syl$groom
 obseff_mat <- grooming$syl$obseff
 ```
 
-
-
 ```{r}
 standat <- make_stan_data_from_matrices(mats = list(groom = groom_mat),
                                         behav_types = "count",
@@ -118,11 +130,9 @@ res <- sociality_model(standat, parallel_chains = 4,
 res <- sociality_model(standat)
 ```
 
-
 ```{r}
 summary(res)
 ```
-
 
 ```{r ppcheck, echo=2:5, fig.width=8, fig.height=2.5, out.width="80%", fig.align='center', fig.cap="\\label{fig:syl_net_pp}Posterior predictive checks for Barbary macaque grooming data. On the left: bars represent observed grooming frequencies. The circles represent the median frequencies predicted by the model and the vertical bars the 89\\% interval around these predictions. One the right: the histogram is the posterior distribution of the maximum number of grooming bouts predicted by the model across all posterior samples. The red line indicates the observed value in the data."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
@@ -135,7 +145,7 @@ pp_model_stat(res, stat = "max", xlab = "maximum number of grooming bouts",
 
 ```{r socplot, echo=2:5, fig.width=5, fig.height=2.1, out.width="50%", fig.align='center', fig.cap="\\label{fig:syl_net_soc}Posteriors for the two sociality components. Variation among dyads is larger than variation among individuals."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
-sociality_plot(res)
+sociality_plot(res, add_prior = TRUE)
 ```
 
 ```{r ridgeplot, echo=2:5, fig.width=8, fig.height=2.9, out.width="80%", fig.align='center', fig.cap="\\label{fig:syl_net_ridge}Posteriors for the two sociality components. The affinity distributions on the right only reflect a subset of 10 dyads."}
