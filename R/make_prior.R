@@ -56,7 +56,7 @@ make_prior <- function(response, type, obseff = NULL, second = FALSE) {
         stop("couldn't set a prior (prior mean is infinite)", call. = FALSE)
       }
       scale <- round(mad(lresp), 1)
-      if (scale < 2.5) scale <- 2.5
+      if (isTRUE(scale < 2.5)) scale <- 2.5
     }
     return(c(location = location, scale = scale))
   }

@@ -19,6 +19,14 @@ geometry: margin = 0.7in
 bibliography: ../inst/REFERENCES.bib
 ---
 
+```{r, echo=FALSE}
+# toggles
+do_brms_compare <- TRUE
+```
+
+
+
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -148,7 +156,7 @@ The two example checks in figure \ref{fig:syl_net_pp} indicate no obvious proble
 ## Visualising the results
 
 Now we can look at the actual results graphically.
-We start by looking at the posteriors for the individual and the dyadic component.
+We start by looking at the posteriors for the spread (i.e., the SD) of the individual and the dyadic component.
 
 ```{r, echo=2:5, fig.width=5, fig.height=2.1, out.width="50%", fig.align='center', fig.cap="\\label{fig:syl_net_soc}Posteriors for the two sociality components. Variation among dyads is larger than variation among individuals."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
@@ -292,7 +300,7 @@ Table \ref{tab:dat_types} lists the possibilities.
 \centering
 \caption{Interaction types and matching observation effort specification supported in \texttt{basomo}.}
 \label{tab:dat_types}
-\begin{tabular}{p{3cm}p{4cm}p{4cm}}
+\begin{tabular}{p{4.5cm}p{6.5cm}p{4cm}}
 \hline
 name in \texttt{basomo} & interactions & observation effort\\ 
 \hline
@@ -300,6 +308,8 @@ name in \texttt{basomo} & interactions & observation effort\\
 \texttt{prop} & counts (integers), `successes' & counts (integers), `trials'\\ 
 \texttt{dur\_beta} & continuous proportion (between 0 and 1) & NA\\ 
 \texttt{dur\_gamma} & positive continuous & positive continuous\\ 
+\texttt{dur\_gamma0} (experimental) & positive continuous including 0 & positive continuous\\ 
+\texttt{binary} (experimental) & 0 or 1 & positive continuous\\ 
 \hline
 \end{tabular}
 \end{table}
@@ -450,7 +460,7 @@ Now, the model predicts also values of 150 up to 200 interactions for that dyad.
 The key point here is that this not problematic, but just illustrates that the model is not predicting *perfectly* but in any case does a good job at predicting that this dyad interacts substantially more than the other dyads of individual E.
 
 
-```{r, echo=3:30, fig.width=8, fig.height=2.4, fig.cap="\\label{fig:pp03}Posterior predictive checks for selected individuals."}
+```{r, echo=3:30, fig.width=8, out.width="95%", fig.height=2.4, fig.cap="\\label{fig:pp03}Posterior predictive checks for selected individuals."}
 par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5))
 par(mfrow = c(1, 3))
 
@@ -1097,18 +1107,23 @@ points(colMeans(s1), colMeans(s2), pch = 4, col = "red", lwd = 3)
 
 The simplest implementation of the model, i.e. with interactions from one behavior, can also be fit with `brms` [@buerkner2017] but requires some post fitting adjustment.
 In order to bring the individual level parameters (gregariousness SD and individual gregariousness values) to the same scale, we need to multiply by $\sqrt{0.5}$.
-The code below demonstrates this without showing actual results.
-The `brms` estimates correspond closely to the ones from `bamoso`.
+<!-- The code below demonstrates this without showing actual results. -->
+The resulting `brms` estimates correspond fairly closely to the ones from `bamoso` (see figures \ref{fig:brmscomparefig1} and \ref{fig:brmscomparefig2}).
 
-```{r, eval = FALSE}
-# set.seed(1)
-x <- generate_data(n_ids = 17,
+```{r, eval = do_brms_compare}
+set.seed(50)
+
+true_indi_sd <- 0.8
+true_dyad_sd <- 1.3
+true_intercept <- -0.2
+
+x <- generate_data(n_ids = 20,
                    n_beh = 1, 
-                   beh_intercepts = c(0.2),
+                   beh_intercepts = true_intercept,
                    behav_types = c(approach = "count"), 
-                   count_obseff = 20,
-                   indi_sd = 0.5, 
-                   dyad_sd = 0.8)
+                   count_obseff = 10,
+                   indi_sd = true_indi_sd, 
+                   dyad_sd = true_dyad_sd)
 
 # interaction matrices
 imats <- list(approach = x$processed$interaction_matrices[[1]])
@@ -1128,47 +1143,71 @@ dyads$obseff <- omats[[1]][as.matrix(dyads[, 2:3])]
 
 <!-- priors <- c(set_prior("exponential(2)", class = "sd", lb = 0)) -->
 
-```{r, eval = FALSE}
+```{r brmscomparecomputations, cache = TRUE, eval = do_brms_compare, include = FALSE}
 library(brms)
 bres <- brm(approach ~ offset(log(obseff)) + (1|dyad) + (1|mm(id1, id2)),
-            data = dyads, family = poisson,
-            backend = "cmdstanr", cores = 4)
-bamres <- sociality_model(standat, parallel_chains = 4, show_exceptions = FALSE)
+            data = dyads, family = poisson, refresh = 0,
+            backend = "cmdstanr", seed = 2, cores = 4)
+bamres <- sociality_model(standat, parallel_chains = 4, silent = TRUE,
+                          seed = 123, show_exceptions = FALSE)
 ```
 
 
-```{r, eval = FALSE}
-plot(0, 0, xlim = c(0, 1.5), ylim = c(0, 12), yaxs = "i", type = "n", 
-     xlab = "estimate", ylab = "density")
+```{r, echo=FALSE}
+cap <- "
+Fitting the simplest version of the sociality model is also possible using the multi-membership syntax in \texttt{brms}.
+The resulting posteriors of the key parameters are very similar to those obtained from \texttt{bamoso} package.
+"
+```
+
+
+```{r brmscomparefig1, echo = 2:50, eval = do_brms_compare, fig.width=6, fig.height=2.3, out.width="70%", fig.align='center', fig.cap=cap}
+par(mgp = c(1.6, 0.3, 0), mar = c(2.5, 2.5, 1, 1), tcl = -0.1, las = 1, family = "serif")
+
+plot(0, 0, xlim = c(-1, 2), xaxs = "i", ylim = c(0, 6), yaxs = "i", type = "n", 
+     xlab = "estimate", ylab = "density", bty = "l")
 cols <- adjustcolor(hcl.colors(3, palette = "zissou"), 0.5)
+
+legend(1.5, 6, xpd = TRUE, bty = "n", pt.cex = 1.5, cex = 0.7,
+       legend = c("true", "bamoso", "brms", "individual", "dyadic", "baseline"), 
+       lty = c(1, 3, 2, NA, NA, NA), 
+       pch = c(NA, NA, NA, 15, 15, 15),
+       col = c("black", "black", "black", cols[1], cols[2], cols[3])
+)
 
 res_brms <- rstan::extract(bres$fit, "sd_mmid1id2__Intercept")$sd_mmid1id2__Intercept
 res_brms <- res_brms * sqrt(0.5)
 res_bam <- extract_samples(bamres, "indi_sd")[, 1]
 polygon(density(res_brms), col = cols[1])
 polygon(density(res_bam), col = cols[1])
-abline(v = c(median(res_brms), median(res_bam)))
+abline(v = c(true_indi_sd, median(res_brms), median(res_bam)), 
+       lty = c(1, 2, 3), col = cols[1], lwd = 2)
 
 res_brms <- rstan::extract(bres$fit, "sd_dyad__Intercept")$sd_dyad__Intercept
 res_bam <- extract_samples(bamres, "dyad_sd")[, 1]
 polygon(density(res_brms), col = cols[2])
 polygon(density(res_bam), col = cols[2])
-abline(v = c(median(res_brms), median(res_bam)))
+abline(v = c(true_dyad_sd, median(res_brms), median(res_bam)), 
+       lty = c(1, 2, 3), col = cols[2], lwd = 2)
 
 res_brms <- rstan::extract(bres$fit, "b_Intercept")$b_Intercept
 res_bam <- extract_samples(bamres, "beh_intercepts")[, 1]
 polygon(density(res_brms), col = cols[3])
 polygon(density(res_bam), col = cols[3])
-abline(v = c(median(res_brms), median(res_bam)))
+abline(v = c(true_intercept, median(res_brms), median(res_bam)), 
+       lty = c(1, 2, 3), col = cols[3], lwd = 2)
 
-legend("topright", legend = c("greg. SD", "affi. SD", "intercept"),
-       col = cols, pch = 15, bty = "n", ncol = 1, cex = 0.6)
 ```
 
 
+```{r, echo=FALSE}
+cap <- "
+The estimated individual level gregariousness values and the dyadic affinity values also correspond very well between the \texttt{brms} and \texttt{bamoso} implementations.
+"
+```
 
-```{r, eval = FALSE}
-par(mfrow = c(1, 2), mgp = c(1.7, 0.3, 0), las = 1)
+```{r brmscomparefig2, echo = 2:50, eval = do_brms_compare, fig.width=8, fig.height=2.2, out.width="95%", fig.align='center', fig.cap=cap}
+par(mfrow = c(1, 2), mgp = c(1.6, 0.3, 0), tcl = -0.1, mar = c(3, 3, 1, 1), las = 1, family = "serif")
 
 # gregariousness (needs adjustment)
 x <- ranef(bres)$mmid1id2[, , 1][, "Estimate"]
