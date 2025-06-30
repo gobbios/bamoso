@@ -10,7 +10,7 @@ matrix and a vector or matrix for observation effort.
 }
 \source{
 \itemize{
-\item{\emph{Macaca assamensis}:} {Oliver Schülke and Julia Ostner}
+\item{\emph{Macaca assamensis}:} {Julia Ostner and Oliver Schülke provided data on Assamese macaques from Phu Khieo Wildlife Sanctuary.}
 \item{\emph{M. fuscata}:} {Andrew MacIntosh}
 \item{\emph{M. nigra}:} {Julie Duboscq}
 \item{\emph{M. sylvanus}:} {Julia Fischer}

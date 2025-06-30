@@ -6,7 +6,7 @@ utils::globalVariables("lkjpriors")
 #'         matrix and a vector or matrix for observation effort.
 #' @source
 #' \itemize{
-#'  \item{\emph{Macaca assamensis}:} {Oliver Schülke and Julia Ostner}
+#'  \item{\emph{Macaca assamensis}:} {Julia Ostner and Oliver Schülke provided data on Assamese macaques from Phu Khieo Wildlife Sanctuary.}
 #'  \item{\emph{M. fuscata}:} {Andrew MacIntosh}
 #'  \item{\emph{M. nigra}:} {Julie Duboscq}
 #'  \item{\emph{M. sylvanus}:} {Julia Fischer}
@@ -121,7 +121,7 @@ utils::globalVariables("lkjpriors")
 #' bamoso:::obseff_to_matrix(obseff = obseff)
 #'
 obseff_to_matrix <- function(obseff, mats = NULL) {
-  if (length(mats) > 1 & (is.vector(obseff, mode = "numeric") || is.vector(obseff, mode = "integer"))) {
+  if (length(mats) > 1 && (is.vector(obseff, mode = "numeric") || is.vector(obseff, mode = "integer"))) {
     aux <- outer(obseff, obseff, "+")
     res <- list()
     for (i in seq_along(mats)) {
