@@ -701,6 +701,84 @@ pp_model_dens(mod_res = fit3, xvar = "prox",
 
 \clearpage
 
+# What could go wrong?
+
+As mentioned repeatedly in this document, we make the assumption that if we model multiple behaviors that these can be explained by one axis.
+Here we use an extreme example (hat tip to an anonymous reviewer who brought this example up!) to demonstrate what happens if this assumption is violated and what to look for if it is.
+We start with generating one(!) behavior (proportions with an observation effort of 100 'trials') and extract the interaction matrix and the observation effort matrix.
+
+```{r}
+set.seed(123)
+d <- generate_data(n_ids = 15, n_beh = 1, behav_types = "prop", prop_trials = 100,
+                   indi_sd = 1, dyad_sd = 1, beh_intercepts = -1.5)
+o1 <- d$processed$obseff_matrices[[1]]
+m1 <- d$processed$interaction_matrices[[1]]
+```
+
+Now we 'reverse' the behavior, so if a dyad was observed 30 times out of 100, we now assign this dyad 70.
+We do this for the entire interaction matrix.
+
+```{r}
+m2 <- o1 - m1
+```
+
+What we did here is essentially creating two behaviors that are perfectly negatively correlated.
+In other words, with these two 'observed' behaviors we now know that our assumption is violated.
+Let's fit our simple model and look how we can detect this.
+
+```{r reviewerexample}
+d <- make_stan_data_from_matrices(mats = list(b1 = m1, b2 = m2), 
+                                  behav_types = c("prop", "prop"),
+                                  obseff = list(b1 = o1, b2 = o1))
+
+r <- sociality_model(d, parallel_chains = 4, silent = TRUE)
+```
+
+
+This model should sample without any computational issues.
+The first hint that something went wrong can be seen in the summary:
+
+```{r}
+summary(r)
+```
+
+Both estimated SDs are practically 0, and without munch uncertainty at that!
+This might make sense statistically, but biologically not so much.
+
+More saliently, if we look at how the model performed in terms of predictions there is no doubt that the model we fitted is bad.
+
+```{r, echo = 2:8, fig.width=8, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:ppextreme1}Posterior predictive checks for two behaviors."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+pp_model(r, xvar = "b1", xlab = "behavior 1", ylab = "")
+pp_model(r, xvar = "b2", xlab = "behavior 2", ylab = "")
+```
+
+Maybe you can already see what's going on?
+For each behavior, the model predicts all dyads to interact equally often (roughly).
+Here are few more checks to see:
+
+```{r, echo = 2:8, fig.width=8, fig.height=3, out.width="50%", fig.align='center', fig.cap="\\label{fig:ppextreme2}Posterior predictive checks for two behaviors."}
+par(family = "serif", mgp = c(1.5, 0.5, 0), mar = c(2.5, 2.5, 0.5, 0.5), mfrow = c(1, 2))
+pp_model_stat(r, xvar = "b1", stat = "max", xlim = c(20, 100), 
+              main = "", xlab = "behavior 1 (max)")
+pp_model_stat(r, xvar = "b2", stat = "max", xlim = c(70, 100), 
+              main = "", xlab = "behavior 2 (max)")
+```
+
+The model predicts maximum interaction proportions that are far away from the observed maximum value in our 'observed data' (and much more so in behavior 1 compared to behavior 2).
+
+The take-home here is that we need to look at more than numeric summaries to see how our model performs.
+In its own neat world, our model here works fine, except it is pretty much useless when we actually want to say anything about the behavior we have observed.
+And that's what we sometimes forget (at least I have this impression very often).
+
+So yes, our model here that assumes the existence of one gregariousness and one affinity axis will not always be appropriate.
+But it might be useful (in its relative simplicity) to reflect reasonably well *observed* interaction patterns.
+
+Sadly, the judgment regarding whether our model is good enough will require some subjective assessment in one way or other.
+
+
+\clearpage
+
 # Extending the model
 
 ## More than one behaviour with correlated axes
