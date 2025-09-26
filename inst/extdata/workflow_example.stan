@@ -33,7 +33,7 @@ transformed parameters {
 
 model {
   vector[n_dyads] lp = rep_vector(0.0, n_dyads);
-  vector[n_dyads] indi_sums = 0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]);
+  vector[n_dyads] indi_sums = sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]);
   lp = lp + indi_sums + dyad_soc_vals; // +
 
   interactions[, 1] ~ poisson(exp(lp + beh_intercepts[1]));
@@ -52,6 +52,6 @@ model {
 generated quantities {
    array[n_dyads, 1] int interactions_pred;
    array[n_ids] int y_rep;
-   interactions_pred[, 1] = poisson_log_rng( 0.5 * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[1]);
+   interactions_pred[, 1] = poisson_log_rng( sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]) + dyad_soc_vals + beh_intercepts[1]);
    y_rep = poisson_log_rng(lp_mod);
 }
