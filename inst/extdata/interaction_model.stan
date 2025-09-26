@@ -1,6 +1,9 @@
-// interactions can be any combination of counts,
-//   discrete proportions (count and trials), continuous proportions (beta),
-//   positive continuous (gamma)
+// interactions can be any combination of counts, discrete proportions
+//   (count and trials), continuous proportions (beta), positive
+//   continuous (gamma)
+
+// two experimental:
+// cont. duration with 0 (mixture gamma/bernoulli) and binary (bernoulli)
 
 // we require actually a second observation effort matrix that is
 //   of type 'integer', otherwise stan will complain
@@ -71,8 +74,8 @@ parameters {
   // vector[gamma_shape_n] aux_baserates_unconstrained; // baserates
 
   vector[gamma_shape_n] shapes_gamma_raw; // unconstrained (<lower=0>)
-  vector<lower=0>[beta_shape_n] shapes_beta; // unconstrained (<lower=0>)
-  // vector[beta_shape_n] shapes_beta_raw; // unconstrained (<lower=0>)
+  // vector<lower=0>[beta_shape_n] shapes_beta; // unconstrained (<lower=0>)
+  vector[beta_shape_n] shapes_beta_raw; // unconstrained (<lower=0>)
 }
 transformed parameters {
   vector[n_ids] indi_soc_vals;  // actual blups
@@ -80,7 +83,7 @@ transformed parameters {
   vector[n_dyads] scaled_indi_sums;  // sums of dyadic values, scaled
   // vector[gamma_shape_n] aux_baserates = inv_logit(aux_baserates_unconstrained); // baserates
   vector<lower=0>[gamma_shape_n] shapes_gamma = exp(shapes_gamma_raw);
-  // vector<lower=0>[beta_shape_n] shapes_beta = exp(shapes_beta_raw);
+  vector<lower=0>[beta_shape_n] shapes_beta = exp(shapes_beta_raw);
   indi_soc_vals = (indi_soc_sd * indi_soc_vals_z);
   dyad_soc_vals = (dyad_soc_sd * dyad_soc_vals_z);
   scaled_indi_sums = sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1]] + indi_soc_vals[dyads_navi[, 2]]);
@@ -115,6 +118,8 @@ model {
         interactions[, i] ~ binomial_logit(obseff_int[, i], lp + beh_intercepts[i]);
       }
       if (behav_types[i] == 3) {
+        // using gamma(shape, shape/mu) parameterization (or: gamma(alpha, rate) where alpha = shape and rate = shape/mu)
+        // (Bolker 2008, Ecological Models and Data in R; Stan docs)
         interactions_cont[, i] ~ gamma(shapes_gamma[gamma_shape_pos[i]],
                                        shapes_gamma[gamma_shape_pos[i]] / exp(lp + beh_intercepts[i] + log(obseff[, i]))); //
       }
@@ -143,19 +148,17 @@ model {
       shapes_gamma_raw[gamma_shape_pos[i]] ~ student_t(4, 1, 1);
     }
     if (behav_types[i] == 4) {
-      shapes_beta[beta_shape_pos[i]] ~ gamma(0.1, 0.1);
-      // shapes_beta_raw[beta_shape_pos[i]] ~ student_t(4, 1, 1);
+      // shapes_beta[beta_shape_pos[i]] ~ gamma(0.1, 0.1);
+      shapes_beta_raw[beta_shape_pos[i]] ~ student_t(4, 1, 1);
     }
     if (behav_types[i] == 5) {
-      // gamma prior comes from prior_matrix2
+      // gamma mu prior comes from prior_matrix2
       beh_intercepts_add[gamma_shape_pos[i]] ~ student_t(3, prior_matrix2[i, 1], prior_matrix2[i, 2]); // gamma in mixture
       shapes_gamma_raw[gamma_shape_pos[i]] ~ normal(1, 1);
     }
   }
   indi_soc_vals_z ~ normal(0, 1);
   dyad_soc_vals_z ~ normal(0, 1);
-  // indi_soc_sd ~ student_t(3, 0, 1);
-  // dyad_soc_sd ~ student_t(3, 0, 1);
   indi_soc_sd ~ exponential(2);
   dyad_soc_sd ~ exponential(2);
 }

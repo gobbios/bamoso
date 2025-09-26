@@ -45,7 +45,7 @@ parameters {
   matrix[n_beh, n_dyads] dyad_soc_vals_z; // blups on z-scale
   vector[n_beh] beh_intercepts; // intercepts for behaviours
 
-  vector<lower=0>[gamma_shape_n] shapes;
+  vector<lower=0>[gamma_shape_n] shapes_gamma;
   vector<lower=0>[beta_shape_n] shapes_beta;
 
   // correlation
@@ -71,8 +71,7 @@ model {
 
   for (i in 1:n_beh) {
     lp = rep_vector(0.0, n_dyads);
-    // indi_sums = sqrt(0.5) * (indi_soc_vals[dyads_navi[, 1], i] + indi_soc_vals[dyads_navi[, 2], i]);
-    // linear predictor
+    // linear predictor mu
     lp = lp + scaled_indi_sums[, i] + dyad_soc_vals[, i];
 
     if (behav_types[i] == 1) {
@@ -82,8 +81,8 @@ model {
       interactions[, i] ~ binomial_logit(obseff_int[, i], lp + beh_intercepts[i]);
     }
     if (behav_types[i] == 3) {
-      interactions_cont[, i] ~ gamma(shapes[gamma_shape_pos[i]],
-                                       shapes[gamma_shape_pos[i]] * exp(-(lp + beh_intercepts[i] + log(obseff[, i])))); //
+      interactions_cont[, i] ~ gamma(shapes_gamma[gamma_shape_pos[i]],
+                                       shapes_gamma[gamma_shape_pos[i]] * exp(-(lp + beh_intercepts[i] + log(obseff[, i])))); //
     }
     if (behav_types[i] == 4) {
       interactions_cont[, i] ~ beta(inv_logit(lp + beh_intercepts[i]) * shapes_beta[beta_shape_pos[i]],
@@ -98,7 +97,7 @@ model {
 
     // extra priors for shape/dispersion parameters
     if (behav_types[i] == 3) {
-      shapes[gamma_shape_pos[i]] ~ gamma(0.01, 0.01);
+      shapes_gamma[gamma_shape_pos[i]] ~ gamma(0.01, 0.01);
     }
     if (behav_types[i] == 4) {
       shapes_beta[beta_shape_pos[i]] ~ gamma(0.1, 0.1);
@@ -106,8 +105,6 @@ model {
     indi_soc_vals_z[i, ] ~ normal(0, 1);
     dyad_soc_vals_z[i, ] ~ normal(0, 1);
   }
-  // indi_soc_sd ~ student_t(3, 0, 1);
-  // dyad_soc_sd ~ student_t(3, 0, 1);
   indi_soc_sd ~ exponential(2);
   dyad_soc_sd ~ exponential(2);
   chol_indi_dims ~ lkj_corr_cholesky(2);
@@ -120,8 +117,6 @@ generated quantities {
   matrix[n_dyads, n_beh] log_lik; // pointwise log likelihoods
   vector<lower=-1,upper=1>[n_cors] cors_indi = chol2corvec(chol_indi_dims, n_beh, n_cors);
   vector<lower=-1,upper=1>[n_cors] cors_dyad = chol2corvec(chol_dyad_dims, n_beh, n_cors);
-
-  //
 
   {
     for (i in 1:n_beh) {
@@ -139,12 +134,12 @@ generated quantities {
         }
       }
       if (behav_types[i] == 3) {
-        interactions_pred_cont[, i] = to_vector(gamma_rng(shapes[gamma_shape_pos[i]],
-                                      shapes[gamma_shape_pos[i]] *
+        interactions_pred_cont[, i] = to_vector(gamma_rng(shapes_gamma[gamma_shape_pos[i]],
+                                      shapes_gamma[gamma_shape_pos[i]] *
                                         exp(-(LP + beh_intercepts[i] + log(obseff[, i])))));
         for (jj in 1:n_dyads) { // loglik
-          log_lik[jj, i] = gamma_lpdf(interactions_cont[jj, i] | shapes[gamma_shape_pos[i]],
-                                       shapes[gamma_shape_pos[i]] * exp(-(LP[jj] + beh_intercepts[i] + log(obseff[jj, i]))));
+          log_lik[jj, i] = gamma_lpdf(interactions_cont[jj, i] | shapes_gamma[gamma_shape_pos[i]],
+                                       shapes_gamma[gamma_shape_pos[i]] * exp(-(LP[jj] + beh_intercepts[i] + log(obseff[jj, i]))));
         }
       }
       if (behav_types[i] == 4) {
@@ -156,14 +151,8 @@ generated quantities {
           log_lik[jj, i] = beta_lpdf(interactions_cont[jj, i] |
                                      inv_logit(LP[jj] + beh_intercepts[i])  * shapes_beta[beta_shape_pos[i]],
                                 (1 - inv_logit(LP[jj] + beh_intercepts[i])) * shapes_beta[beta_shape_pos[i]]);
-
         }
-
       }
-
     }
-
   }
 }
-
-
