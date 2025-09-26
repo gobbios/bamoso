@@ -29,8 +29,6 @@ summary.dyadicmodel <- function(object, ...) {
       # qs_d <- sprintf("%.2f", quantile(d[, "dyad_soc_sd"], c(0.055, 0.5, 0.945)))
     }
 
-
-
   }
   if (has_correlations) {
     d <- object$mod_res$draws(c("indi_soc_sd", "dyad_soc_sd"),
@@ -56,6 +54,13 @@ summary.dyadicmodel <- function(object, ...) {
       qs_d_cors <- matrix(qs_d_cors, ncol = 3)
     }
   }
+
+
+  # intercept draws
+  idraws <- apply(object$mod_res$draws("beh_intercepts", format = "draws_matrix"),
+                  2,
+                  quantile, c(0.055, 0.5, 0.945))
+  idraws <- t(apply(idraws, 2, function(x) sprintf("%.2f", x)))
 
 
   s <- paste0("Model of dyadic interactions from ", object$standat$n_ids,
@@ -113,20 +118,37 @@ summary.dyadicmodel <- function(object, ...) {
     cat("--------------------\n")
   }
 
-
+  # idraws
   cat(object$standat$n_beh, "behavior(s) included:\n")
   for (i in seq_len(object$standat$n_beh)) {
     s <- paste0("(", i, "): ",
                 shQuote(names(object$standat$beh_names)[i]), " (type: ",
                 shQuote(names(object$standat$behav_types)[i]), ")")
-    cat(s, "\n")
+    s2 <- paste("(median [89% CI]:", idraws[i, 2], paste0("[", idraws[i, 1], " - ", idraws[i, 3], "])\n"))
+    cat(s, s2, "\n")
   }
 
   cat("--------------------\n")
   diagnostics <- object$mod_res$diagnostic_summary(quiet = TRUE)
+
+  # check rhat numerically:
+  pars <- c("indi_soc_sd", "indi_soc_vals", "beh_intercepts")
+  if ("dyad_soc_sd" %in% object$mod_res$metadata()$model_params) pars <- c(pars, "dyad_soc_sd")
+  if ("dyad_soc_vals[1]" %in% object$mod_res$metadata()$model_params) pars <- c(pars, "dyad_soc_vals")
+  if ("shapes_beta[1]" %in% object$mod_res$metadata()$model_params) pars <- c(pars, "shapes_beta")
+  if ("shapes_gamma[1]" %in% object$mod_res$metadata()$model_params) pars <- c(pars, "shapes_gamma")
+  if ("cors_indi[1]" %in% object$mod_res$metadata()$model_params) pars <- c(pars, "cors_indi")
+  if ("cors_dyad[1]" %in% object$mod_res$metadata()$model_params) pars <- c(pars, "cors_dyad")
+  xx <- data.frame(object$mod_res$summary(pars))
+  # diagnostics$criticalrhat <- sum(round(xx$rhat, 2) > 1.01)
+  diagnostics$maxrhat <- round(max(xx$rhat), 2)
+
+
   if (all(diagnostics$num_divergent == 0) &&
       all(diagnostics$num_max_treedepth == 0) &&
-      all(diagnostics$ebfmi > 0.2)) {
+      all(diagnostics$ebfmi > 0.2) &&
+      diagnostics$maxrhat < 1.02
+      ) {
     diags <- TRUE
     msg <- "no obvious sampling issues detected"
   } else {
