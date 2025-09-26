@@ -6,10 +6,14 @@
 \usage{
 sim_foo(
   ...,
-  n_ids = sample(5:30, 1),
+  sdatalist = NULL,
+  n_ids = sample(5:60, 1),
   indi_sd = runif(1, 0.1, 3),
   dyad_sd = runif(1, 0.1, 3),
   n_beh = sample(3, 1),
+  indi_cor = NULL,
+  dyad_cor = NULL,
+  behav_types = NULL,
   intercepts = runif(n_beh, -3, 1),
   disp_pars_gamma = runif(n_beh, 1, 20),
   disp_pars_beta = runif(n_beh, 5, 30),
@@ -17,28 +21,41 @@ sim_foo(
   outfilename = NULL,
   silent = TRUE,
   diagnostics = TRUE,
+  chains = 4,
   parallel_chains = 1,
   refresh = 0,
   iter_warmup = 2000,
   iter_sampling = 1000,
+  adapt_delta = 0.98,
+  max_treedepth = 14,
   testing_mode = FALSE
 )
 }
 \arguments{
 \item{...}{arguments for \code{\link{generate_data}}}
 
+\item{sdatalist}{optional list with results from  \code{\link{generate_data}}.
+If this is supplied, no new data will be generated in this
+function}
+
 \item{n_ids}{see \code{\link{generate_data}}}
 
 \item{indi_sd}{numeric, SD for gregariousness (defaults to
-\code{runif(1, 0.1, 2)})}
+\code{runif(1, 0.1, 3)})}
 
 \item{dyad_sd}{numeric, SD for dyadic affinity (defaults to
-\code{runif(1, 0.1, 2)})}
+\code{runif(1, 0.1, 3)})}
 
 \item{n_beh}{see \code{\link{generate_data}}}
 
+\item{indi_cor, dyad_cor}{numeric value for correlation parameter
+(only works if \code{n_beh = 2}). Default is \code{NULL}, i.e.,
+no correlations.}
+
+\item{behav_types}{see \code{\link{generate_data}}}
+
 \item{intercepts}{numeric of length two, determines the range for
-intercepts. Defaults to \code{c(-2, 2)}. How many
+intercepts. Defaults to \code{c(-3, 1)}. How many
 intercepts are needed is determined inside the
 function.}
 
@@ -54,6 +71,8 @@ function.}
 
 \item{diagnostics}{logical, report problems with sampling}
 
+\item{chains}{number of total processes}
+
 \item{parallel_chains}{number of parallel processes}
 
 \item{refresh}{refresh argument}
@@ -62,8 +81,12 @@ function.}
 
 \item{iter_sampling}{iter_sampling argument}
 
+\item{adapt_delta}{adapt_delta argument}
+
+\item{max_treedepth}{max_treedepth argument}
+
 \item{testing_mode}{logical, default is \code{FALSE}. If \code{TRUE}: runs
-the model as prior simulation which illustrates how the function
+the model as prior simulation, which illustrates how the function
 works while taking less time.}
 }
 \value{
@@ -75,7 +98,7 @@ Most importantly, the list contains a one-line data frame
 analyses (see Details section).
 }
 \description{
-fit the model with simulated data and store results to file
+generate data, fit the model and store results to file
 }
 \details{
 The function starts by generating interaction data across variable settings
