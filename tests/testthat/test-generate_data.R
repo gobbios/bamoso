@@ -12,6 +12,16 @@ test_that("warning/message is generated if any matrix is empty", {
 })
 
 
+test_that("generated beta proportions don't go near 1", {
+  vals <- numeric(100)
+  for (i in seq_along(vals)) {
+    d <- generate_data(n_beh = 1, behav_types = "dur_beta")
+    vals[i] <- max(d$standat$interactions_cont)
+  }
+  expect_lt(max(vals), 1 - 1e-15)
+})
+
+
 # make sure data are generated such that make_prior doesn't return Inf
 has_inf <- data.frame(run = 1:100, count = NA, prop = NA, gamma = NA, beta = NA)
 for (i in 1:100) {
@@ -47,6 +57,27 @@ test_that("dimension mismatches are detected", {
 
 })
 
+test_that("error is thrown when inappropriate correlation matrix is supplied", {
+  # valid
+  cors_dyad <- matrix(c(0.3, 0.3, 0.3, 0.3), ncol = 2)
+  # invalid 1
+  cors_indi <- matrix(c(-0.3, 0.7, 0.7, 1.3), ncol = 2)
+
+  expect_error(generate_data(n_ids = 7, n_beh = 2,
+                      behav_types = c("count", "prop"),
+                      indi_sd = cors_indi,
+                      dyad_sd = cors_dyad))
+
+  # invalid 2
+  cors_indi <- matrix(c(0.3, 1.7, 1.7, 1.3), ncol = 2)
+  expect_error(generate_data(n_ids = 7, n_beh = 2,
+                             behav_types = c("count", "prop"),
+                             indi_sd = cors_indi,
+                             dyad_sd = cors_dyad))
+
+
+})
+
 
 test_that("stan data from simulated data contains the correct list elements", {
   x <- suppressWarnings(generate_data(n_beh = 2, n_ids = 12, dyad_sd = 1, indi_sd = 1, beh_intercepts = runif(2, 0, 10),
@@ -72,3 +103,5 @@ test_that("stan data from simulated data contains the correct list elements", {
   expect_true("beh_names" %in% names(standat))
   expect_true("behav_types" %in% names(standat))
 })
+
+

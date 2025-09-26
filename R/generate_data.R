@@ -139,19 +139,20 @@
 
 
 # n_ids = 5
-# n_beh = 3
-# behav_types = c("count", "dur_gamma0", "prop")
+# n_beh = 2
+# behav_types = c("count", "prop")
 # indi_sd = 1.2
 # dyad_sd = 0.8
 # indi_covariate_slope = indi_cat_slope = dyad_covariate_slope = dyad_cat_slope = NULL
 # disp_pars_gamma = c(NA, 0.6, NA)
 # disp_pars_beta = NULL
-# beh_intercepts = c(1.4, -0.5, -0.7)
-# beh_intercepts_add = c(-0.5, -0.5, -0.7)
+# beh_intercepts = c(1.4, -0.5)
+# beh_intercepts_add = c( -0.5, -0.7)
 # prop_trials = 100
 # count_obseff = 1
 # exact = TRUE
 # force_z_predictors=TRUE
+# indi_sd=dyad_sd=matrix(c(-1.2, -.7, -.7, -0.2), ncol = 2)
 
 
 generate_data <- function(n_ids = NULL,
@@ -252,8 +253,20 @@ generate_data <- function(n_ids = NULL,
     indi_sd_mat <- indi_sd
     dyad_sd_mat <- dyad_sd
   }
-  # rm(indi_sd)
-  # rm(dyad_sd)
+
+  # checks for positive SDs and cors:
+  if (any(diag(indi_sd_mat) < 0)) stop("gregariousness SD can't be negative")
+  if (any(diag(dyad_sd_mat) < 0)) stop("affinity SD can't be negative")
+  if (ncol(dyad_sd_mat) > 1) {
+    if (max(abs(dyad_sd_mat[upper.tri(dyad_sd_mat) | lower.tri(dyad_sd_mat)])) > 1) {
+      stop("affinity correlations have to range between -1 and 1")
+    }
+  }
+  if (ncol(indi_sd_mat) > 1) {
+    if (max(abs(indi_sd_mat[upper.tri(indi_sd_mat) | lower.tri(indi_sd_mat)])) > 1) {
+      stop("gregariousness correlations have to range between -1 and 1")
+    }
+  }
 
   # we can't deal generically with correlations with dur_gamma0
   # (i.e. behavior where we need to estimate more than one intercept)
@@ -450,9 +463,10 @@ generate_data <- function(n_ids = NULL,
                                  shape1 = mu * phi,
                                  shape2 = (1 - mu) * phi)
       # make sure no 0 and 1 in the results
-      if (any(interactions[, i] == 1)) {
-        sel <- which(interactions[, i] == 1)
-        interactions[sel, i] <- interactions[sel, i] - runif(length(sel), 0, 0.00001)
+      if (any(interactions[, i] > (1 - (1e-15)))) {
+        sel <- which(interactions[, i] > (1 - (1e-15)))
+        # interactions[sel, i] <- interactions[sel, i] - runif(length(sel), 0, 1e-15)
+        interactions[sel, i] <- (1 - 1e-15) - runif(length(sel), .Machine$double.eps, 1e-15)
       }
       if (any(interactions[, i] == 0)) {
         sel <- which(interactions[, i] == 0)
