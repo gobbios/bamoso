@@ -1233,8 +1233,8 @@ bamres <- sociality_model(standat, parallel_chains = 4, silent = TRUE,
 
 ```{r, echo=FALSE}
 cap <- "
-Fitting the simplest version of the sociality model is also possible using the multi-membership syntax in \texttt{brms}.
-The resulting posteriors of the key parameters are very similar to those obtained from \texttt{bamoso} package.
+Fitting the simplest version of the sociality model is also possible using the multi-membership syntax in \\texttt{brms}.
+The resulting posteriors of the key parameters are very similar to those obtained from \\texttt{bamoso} package.
 "
 ```
 
