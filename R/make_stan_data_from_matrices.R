@@ -302,7 +302,7 @@ make_stan_data_from_matrices <- function(mats,
   # set obseff for props to 100 if not supplied...
   # if (is.null(obseff)) {
     for (i in seq_along(mats)) {
-      if (behav_types[i] == "prop" & all(obseff_dat[, i] == 1, na.rm = TRUE)) {
+      if (behav_types[i] == "prop" && all(obseff_dat[, i] == 1, na.rm = TRUE)) {
         obseff_dat[, i] <- 100
       }
     }

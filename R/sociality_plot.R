@@ -58,7 +58,8 @@ sociality_plot <- function(mod_res,
                            which_beh = NULL,
                            which_cor = NULL,
                            xcols = NULL,
-                           add_prior = FALSE
+                           add_prior = FALSE,
+                           ylim = NULL
                            ) {
 
   if (is.null(xcols)) xcols <- c("#3B99B1B3", "#EACB2BB3")
@@ -114,8 +115,8 @@ sociality_plot <- function(mod_res,
 
   xxlab <- "estimated SD"
   if (is_a_cor_plot) xxlab <- "estimated correlation"
-
-  plot(0, 0, xlim = xlim, ylim = c(0, max(p1$y, p2$y) * 1.05),
+  if (is.null(ylim)) ylim <- c(0, max(p1$y, p2$y)) * 1.05
+  plot(0, 0, xlim = xlim, ylim = ylim,
        type = "n", xaxs = "i", yaxs = "i", xlab = xxlab,
        ylab = "density", axes = FALSE, main = "")
   if (do_legend) {

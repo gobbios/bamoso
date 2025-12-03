@@ -11,3 +11,4 @@ vignette_candidates/
 _simus/
 inst/sim1_nocors.r
 inst/sim2_cors.r
+dev/
