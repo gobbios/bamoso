@@ -57,6 +57,7 @@
 #' @param exact logical, default is \code{TRUE}: should the varying intercepts
 #'          for \code{indi_sd} and \code{dyad_sd} be re-scaled so that they
 #'          have means of 0 and exact SD as supplied.
+#' @param attach_ids logical: attach ids to matrices
 #' @param force_z_predictors logical, force all (if there are any) covariates
 #'          (individual or dyad level features) to be z-standardized.
 #'          Default is TRUE.
@@ -171,6 +172,7 @@ generate_data <- function(n_ids = NULL,
                           prop_trials = 100, # number of trials for binomial
                           count_obseff = 1, # observation effort for count data
                           exact = TRUE,
+                          attach_ids = FALSE,
                           force_z_predictors = TRUE) {
 
   if (isTRUE(n_ids < 4)) stop("we need at least four individuals", call. = FALSE)
@@ -611,6 +613,16 @@ generate_data <- function(n_ids = NULL,
 
   if (length(indi_sd) > 1) {
     standat$n_cors <- sum(upper.tri(indi_sd))
+  }
+
+  if (attach_ids) {
+    idlabs <- sample(apply(combn(letters, 2), 2, paste, collapse = ""), n_ids)
+    for (i in seq_len(n_beh)) {
+      colnames(imats[[i]]) <- idlabs
+      rownames(imats[[i]]) <- idlabs
+      colnames(omats[[i]]) <- idlabs
+      rownames(omats[[i]]) <- idlabs
+    }
   }
 
   list(standat = standat,
