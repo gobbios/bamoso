@@ -239,3 +239,94 @@ prob2lin <- function(x, obseff) {
   log((-log(1 - x))/obseff)
 }
 
+
+#' indexing over multiple groups or periods
+#'
+#' @param grouplist list with character vectors
+#'
+#' @returns list with two data frames
+make_indices <- function(grouplist) {
+
+  ov <- data.frame(group = names(grouplist))
+  ov$n_ids <- unlist(lapply(grouplist, length))
+
+
+  ilist <- list()
+  indilist <- list()
+  i=1
+  current_max_id <- 0
+  current_max_dyad <- 0
+  for (i in seq_along(grouplist)) {
+    ids_ori <- grouplist[[i]]
+    periodids <- paste(ids_ori, "_@@_", ov$group[i], sep = "")
+
+    tempresindi <- data.frame(
+      period = i,
+      period_char = ov$group[i],
+      within_id = seq_along(ids_ori),
+      id = seq_along(ids_ori) + current_max_id,
+      within_id_char = ids_ori,
+      id_char = periodids
+    )
+
+    index <- which(upper.tri(diag(length(ids_ori))), arr.ind = TRUE)
+    index_char1 <- cbind(ids_ori[index[, 1]], ids_ori[index[, 2]])
+    index_char2 <- cbind(periodids[index[, 1]], periodids[index[, 2]])
+    index1 <- index
+    index2 <- index + current_max_id
+    current_max_id <- max(index2)
+    dindex1 <- seq_len(nrow(index))
+    dindex2 <- dindex1 + current_max_dyad
+    current_max_dyad <- max(dindex2)
+    dindex1_char <- apply(index_char1, 1, paste, collapse = "_@_")
+    dindex2_char <- apply(index_char2, 1, paste, collapse = "_@_")
+
+    tempres <- data.frame(
+      period = i,
+      period_char = ov$group[i],
+      within_id1 = index1[, 1],
+      within_id1_char = index_char1[, 1],
+      id1 = index2[, 1],
+      id1_char = index_char2[, 1],
+      within_id2 = index1[, 2],
+      within_id2_char = index_char1[, 2],
+      id2 = index2[, 2],
+      id2_char = index_char2[, 2],
+      within_dyad = dindex1,
+      within_dyad_char = dindex1_char,
+      dyad = dindex2,
+      dyad_char = dindex2_char
+    )
+    ilist[[length(ilist) + 1]] <- tempres
+    indilist[[length(indilist) + 1]] <- tempresindi
+  }
+  ilist <- do.call("rbind", ilist)
+  indilist <- do.call("rbind", indilist)
+
+  list(indices_dyad = ilist, indices_indi = indilist)
+}
+
+
+#' helper for creating ids over multiple groups
+#'
+#' @param n_groups number of groups to be generated
+#' @param min_nids,max_nids range of group sizes
+#' @param poolsize integer total number of unique individuals across all groups
+#'
+#' @returns a list
+generate_groups <- function(n_groups = 10,
+                            min_nids = 4,
+                            max_nids = 12,
+                            poolsize = (max_nids * 1.2)
+                            ) {
+  if (poolsize > 325) stop("max poolsize = 325")
+  pool <- sample(apply(combn(letters, 2), 2, paste, collapse = ""), poolsize)
+
+  res <- sapply(seq_len(n_groups), \(i) {
+    n <- sample(min_nids:max_nids, 1)
+    sample(pool, n)
+  }, simplify = FALSE)
+
+  names(res) <- paste0("P", sprintf("%02.f", seq_len(n_groups)))
+  res
+}

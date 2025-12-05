@@ -21,6 +21,7 @@ generate_data(
   prop_trials = 100,
   count_obseff = 1,
   exact = TRUE,
+  attach_ids = FALSE,
   force_z_predictors = TRUE
 )
 }
@@ -97,6 +98,8 @@ relevant for data generated as counts (and also \code{"dur_gamma"},
 \item{exact}{logical, default is \code{TRUE}: should the varying intercepts
 for \code{indi_sd} and \code{dyad_sd} be re-scaled so that they
 have means of 0 and exact SD as supplied.}
+
+\item{attach_ids}{logical: attach ids to matrices}
 
 \item{force_z_predictors}{logical, force all (if there are any) covariates
 (individual or dyad level features) to be z-standardized.
