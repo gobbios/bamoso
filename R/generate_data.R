@@ -7,9 +7,8 @@
 #'        \code{"count"}, \code{"dur_gamma"} and \code{"dur_beta"}.
 #'        There are also experimental \code{"dur_gamma0"} and \code{"binary"}.
 #' @param indi_sd numeric, the SD for the individual component. Must be
-#'                positive. Default is a random value
-#'                (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
-#'                See details.
+#'          positive. Default is a random value  (\code{runif(1, 0.1, 2)}).
+#'          Can also be a correlation/SD matrix. See details.
 #' @param dyad_sd numeric, the SD for the dyadic component. Must be
 #'                positive. Default is a random value
 #'                (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
@@ -570,7 +569,8 @@ generate_data <- function(n_ids = NULL,
                   dyads_navi = as.matrix(dyads[, 1:2]),
                   obseff = obseff,
                   prior_matrix = prior_matrix,
-                  prior_matrix2 = prior_matrix2, # second set of priors (for now only relevant for dur_gamma0)
+                  # second set of priors (for now only relevant for dur_gamma0)
+                  prior_matrix2 = prior_matrix2,
                   obseff_int = apply(obseff, 2, as.integer),
                   gamma_shape_pos = gamma_shape_pos_mod,
                   gamma_shape_n = sum(gamma_shape_pos > 0),

@@ -1,3 +1,5 @@
 *.html
 *.R
 intro_cache/
+covariates_cache/
+*.pdf

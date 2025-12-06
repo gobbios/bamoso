@@ -19,10 +19,12 @@
 #'
 #'
 #' @examples
+#' \dontrun{
 #' model <- fit_example_model(num = 1)
 #' summary(model)
 #' cor_plot(model, asp = 1, xlab = "A", ylab = "B")
 #' cor_plot(model, greg = FALSE, xlim = c(-3, 3), asp = 1)
+#' }
 
 # requires MASS package...
 # @importFrom MASS kde2d
