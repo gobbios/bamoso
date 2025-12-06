@@ -2,12 +2,69 @@
 #' fit simple example models with simple example data
 #'
 #' @param num an integer
-#'
+#' @importFrom utils data
 #' @return a model object
 #' @export
 #'
 
 fit_example_model <- function(num = 1) {
+  if (num == "grooming1") {
+    if (interactive()) {
+      cat("macaque grooming model\n")
+    }
+    data(grooming, envir = environment()) # prevent loading into user workspace
+    g <- list(ass = grooming$ass$groom,
+              fus = grooming$fus$groom,
+              nig = grooming$nig$groom,
+              syl = grooming$syl$groom)
+    o <- list(ass = grooming$ass$obseff,
+              fus = grooming$fus$obseff,
+              nig = grooming$nig$obseff,
+              syl = grooming$syl$obseff)
+    d <- bamoso:::make_stan_data_from_matrices_multi(
+      bmats = g,
+      btypes = "count",
+      omats = o
+      )
+    r <- sociality_model(d,
+                         parallel_chains = 4,
+                         silent = TRUE,
+                         seed = 3,
+                         adapt_delta = 0.95,
+                         iter_warmup = 400,
+                         iter_sampling = 200,
+                         refresh = 0,
+                         show_exceptions = FALSE)
+    return(r)
+
+  }
+
+  if (num == "grooming2") {
+    if (interactive()) {
+      cat("macaque grooming model with 6 fems\n")
+    }
+    data(grooming, envir = environment())
+    g <- list(ass = grooming$ass$groom[1:6, 1:6],
+              sylvanus = grooming$syl$groom[1:6, 1:6])
+    o <- list(ass = grooming$ass$obseff[1:6, 1:6],
+              sylvanus = grooming$syl$obseff[1:6, 1:6])
+    d <- bamoso:::make_stan_data_from_matrices_multi(
+      bmats = g,
+      btypes = "count",
+      omats = o
+    )
+    r <- sociality_model(d,
+                         parallel_chains = 4,
+                         silent = TRUE,
+                         seed = 3,
+                         adapt_delta = 0.95,
+                         iter_warmup = 400,
+                         iter_sampling = 200,
+                         refresh = 0,
+                         show_exceptions = FALSE)
+    return(r)
+  }
+
   if (num == 1) {
     if (interactive()) {
       cat("12 indis, 2 behaviors, cors generated, and fitted\n")

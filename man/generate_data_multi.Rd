@@ -21,15 +21,15 @@ a list with matrices that can be passed to
 please consider this still EXPERIMENTAL!
 }
 \details{
-The function is a wrapper for \code{\link{generat_data}}.
+The function is a wrapper for \code{\link{generate_data}}.
 }
 \examples{
 n <- 3 # number of groups to generate
 # just assign group size and id codes
-groups <- generate_groups(n_groups = n, min_nids = 4, max_nids = 5)
+groups <- bamoso:::generate_groups(n_groups = n, min_nids = 4, max_nids = 5)
 # set true parameter value
 (indisds <- round(exp(rnorm(n, -1, 0.8)), 1))
 (dyadsds <- round(exp(rnorm(n, -0.5, 0.6)), 1))
 (bintercepts <- round(rnorm(n, -2, 1), 1))
-generate_data_multi(groups, indisds, dyadsds, bintercepts)
+bamoso:::generate_data_multi(groups, indisds, dyadsds, bintercepts)
 }

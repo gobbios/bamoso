@@ -2,6 +2,8 @@
 #'
 #' @param mod_res model result from \code{\link{sociality_model}}
 #' @param xlim limits for horizontal axis
+#' @param ylim optional limits for vertical density axis (taken from the
+#'          data by default)
 #' @param labs named list with labels for the individual- and
 #'             dyad-specific component
 #' @param do_legend logical, should the legend be plotted
@@ -19,6 +21,9 @@
 #'                  for which the correlation posteriors should be displayed.
 #' @param xcols vector of length two, with the colors to use default are two
 #'              Zissou colors (blueish and yellow/gold)
+#' @param group character of length 1. EXPERIMENTAL. Works only for
+#'          models of type \code{"multi_manygroups"} (see
+#'          \code{\link{make_stan_data_from_matrices_multi}}).
 #' @param add_prior logical, default is \code{FALSE}. Should the prior be added
 #'                  to the plot. Careful: for now the prior is hardcoded in
 #'                  this function and doesn't take its value from
@@ -47,6 +52,15 @@
 #' sociality_plot(res, which_cor = c(2,3), xlim = c(-1, 1)) # true 0.7 for both
 #' }
 #'
+#'
+#' \dontrun{
+#' mod_res <- fit_example_model("grooming1")
+#' sociality_plot(mod_res)
+#' sociality_plot(mod_res, group = "ass")
+#' sociality_plot(mod_res, group = "fus")
+#' sociality_plot(mod_res, group = "nig")
+#' sociality_plot(mod_res, group = "syl")
+#' }
 
 sociality_plot <- function(mod_res,
                            xlim = c(0, 4),
@@ -59,7 +73,8 @@ sociality_plot <- function(mod_res,
                            which_cor = NULL,
                            xcols = NULL,
                            add_prior = FALSE,
-                           ylim = NULL
+                           ylim = NULL,
+                           group = NULL
                            ) {
 
   if (is.null(xcols)) xcols <- c("#3B99B1B3", "#EACB2BB3")
@@ -72,7 +87,7 @@ sociality_plot <- function(mod_res,
 
   standat <- mod_res$standat
   bnames <- names(standat$beh_names)
-
+  modeltype <- mod_res$modeltype
   mod_res <- mod_res$mod_res
 
 
@@ -98,6 +113,12 @@ sociality_plot <- function(mod_res,
     if (identical(xlim, c(0, 4))) xlim <- c(-1, 1)
     corname <- paste(bnames[which_cor], collapse = " * ")
   } else {
+    if (is.null(group)) {
+      if (modeltype %in% c("multi_manygroups")) {
+        warning("looks like a model with multiple groups, you sure you want to combine the posteriors across groups?")
+      }
+    }
+
     if (!is.null(which_beh)) {
       if (length(which_beh) != 1) {
         stop ("need to select *one* behaviour", call. = FALSE)
@@ -108,8 +129,20 @@ sociality_plot <- function(mod_res,
       p1 <- density(as.numeric(mod_res$draws(paste0("indi_soc_sd[", which_beh, "]"))))
       p2 <- density(as.numeric(mod_res$draws(paste0("dyad_soc_sd[", which_beh, "]"))))
     } else {
-      p1 <- density(as.numeric(mod_res$draws("indi_soc_sd")))
-      p2 <- density(as.numeric(mod_res$draws("dyad_soc_sd")))
+      if (!is.null(group)) {
+        if (length(group) != 1) stop("only one group can be specified")
+        if (!group %in% names(standat$n_dyads_perperiod)) stop ("group", shQuote(group), "not found")
+        aux <- mod_res$draws("indi_soc_sd", format = "draws_matrix")
+        aux <- as.numeric(aux[, names(standat$n_dyads_perperiod) == group])
+        p1 <- density(aux)
+        aux <- mod_res$draws("dyad_soc_sd", format = "draws_matrix")
+        aux <- as.numeric(aux[, names(standat$n_dyads_perperiod) == group])
+        p2 <- density(aux)
+      } else {
+        p1 <- density(as.numeric(mod_res$draws("indi_soc_sd")))
+        p2 <- density(as.numeric(mod_res$draws("dyad_soc_sd")))
+
+      }
     }
   }
 
@@ -163,7 +196,6 @@ sociality_plot <- function(mod_res,
       aux <- sample(lkjpriors[, "2"], 1000) # that's the current prior in interactions_cor
       polygon(density(aux, adjust = 1.2), border = 'grey')
     }
-
   }
 
   box(bty = "l")

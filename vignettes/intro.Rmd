@@ -701,6 +701,92 @@ pp_model_dens(mod_res = fit3, xvar = "prox",
 
 \clearpage
 
+# A comparative example with empirical data
+
+Here we illustrate the case of applying the model to multiple groups.
+In this particular case, we have data on grooming interactions in groups of four macaque species, i.e. four groups in total.
+These data could also come from different groups of the same species, or the same group recorded multiple times over time.
+In this example here, we take the simplest case possible. 
+We essentially treat the four groups as entirely independent entities.
+In other words, if we were to fit the simple model from above (see figure \ref{fig:syl_net_soc}) four time, we would get very similar results.
+Currently, this multi-group model only supports interaction data in the form of frequencies (`"count"`), but will eventually be extended to the remaining error families.
+
+We start by creating a list of the input interaction data and a list of the corresponding observation effort.
+For speed reasons we limit each group to 6 females for illustration.
+
+```{r}
+data(grooming)
+# assemble list
+g <- list(ass = grooming$ass$groom[1:6, 1:6], 
+          fus = grooming$fus$groom[1:6, 1:6], 
+          nig = grooming$nig$groom[1:6, 1:6], 
+          syl = grooming$syl$groom[1:6, 1:6])
+o <- list(ass = grooming$ass$obseff[1:6, 1:6],
+          fus = grooming$fus$obseff[1:6, 1:6],
+          nig = grooming$nig$obseff[1:6, 1:6], 
+          syl = grooming$syl$obseff[1:6, 1:6])
+standat <- bamoso:::make_stan_data_from_matrices_multi(
+  bmats = g, 
+  btypes = "count",
+  omats = o
+)
+```
+
+Now we proceed to fitting the model:
+
+```{r macaque_multi_model, cache=TRUE, include=FALSE}
+mac <- sociality_model(standat, parallel_chains = 4, 
+                       refresh = 200,
+                       adapt_delta = 0.97, seed = 47)
+```
+
+```{r, eval = FALSE}
+mac <- sociality_model(standat, adapt_delta = 0.9)
+```
+
+
+We can plot the visual summaries as before, and while you could put all groups in one density the better choice is to visually separate them.
+
+```{r, echo=5:15, fig.width=6, fig.height=4.5, out.width="69%", fig.align='center', fig.cap=figcap}
+figcap <- "
+Posterior distributions of individual gregariousness and dyadic affinity parameters.
+The four underlying interaction networks were undirected grooming networks (frequencies or durations) in groups of 15 to 21 adult female macaques of different species.
+"
+par(mfcol = c(2, 2), family = "serif", mgp = c(1.5, 0.5, 0), mar = c(3, 3, 2, 1), tcl = 0)
+maxy <- 3.2
+sociality_plot(mac, add_prior = TRUE, ylim = c(0, maxy), group = "ass")
+title(main = "assamensis", font.main = 4, line = -1)
+sociality_plot(mac, add_prior = TRUE, ylim = c(0, maxy), group = "fus")
+title(main = "fuscata", font.main = 4, line = -1)
+sociality_plot(mac, add_prior = TRUE, ylim = c(0, maxy), group = "nig")
+title(main = "nigra", font.main = 4, line = -1)
+sociality_plot(mac, add_prior = TRUE, ylim = c(0, maxy), group = "syl")
+title(main = "sylvanus", font.main = 4, line = -1)
+```
+
+We can also get numeric summaries.
+
+```{r, eval = FALSE}
+summary(mac)
+model_summary(mac)
+```
+
+We don't show the output here because it is quite extensive.
+The posterior checks that are appropriate given the data and design constraints also work.
+For example:
+
+```{r, eval = FALSE}
+pp_model(mac, group = "ass")
+pp_model_stat(mac, stat = "max", group = "nig")
+```
+
+
+
+
+
+
+\clearpage
+
 # What could go wrong?
 
 As mentioned repeatedly in this document, we make the assumption that if we model multiple behaviors that these can be explained by one axis.
@@ -1184,7 +1270,10 @@ points(colMeans(s1), colMeans(s2), pch = 4, col = "red", lwd = 3)
 # Simple model with `brms`
 
 The simplest implementation of the model, i.e. with interactions from one behavior, can also be fit with `brms` [@buerkner2017] but requires some post fitting adjustment.
-In order to bring the individual level parameters (gregariousness SD and individual gregariousness values) to the same scale, we need to multiply by $\sqrt{0.5}$.
+In order to bring the individual level parameters (gregariousness SD and individual gregariousness values) to the same scale, we need to multiply by $\sqrt{0.5}$.\footnote{There is also the possibility to make the adjust in the call to \texttt{brm()}, but I find this too convoluted:\\\\
+\texttt{dyads\$w <- cbind(rep(sqrt(0.5), nrow(dyads)),  rep(sqrt(0.5), nrow(dyads)))}\\\\
+\texttt{brm(... + (1|mm(id1, id2, weights = w, scale = FALSE)), ...)}
+}
 <!-- The code below demonstrates this without showing actual results. -->
 The resulting `brms` estimates correspond fairly closely to the ones from `bamoso` (see figures \ref{fig:brmscomparefig1} and \ref{fig:brmscomparefig2}).
 
@@ -1280,7 +1369,7 @@ abline(v = c(true_intercept, median(res_brms), median(res_bam)),
 
 ```{r, echo=FALSE}
 cap <- "
-The estimated individual level gregariousness values and the dyadic affinity values also correspond very well between the \texttt{brms} and \texttt{bamoso} implementations.
+The estimated individual level gregariousness values and the dyadic affinity values also correspond very well between the \\texttt{brms} and \\texttt{bamoso} implementations.
 "
 ```
 
@@ -1294,7 +1383,7 @@ y <- colMeans(extract_samples(bamres, "indi_vals"))
 plot(x, y, xlab = "brms estimates (adjusted)", ylab = "bamoso estimates")
 abline(0, 1)
 
-# affinity (no adjustment)
+# affinity (no adjustment needed)
 x <- ranef(bres)$dyad[, , 1][, "Estimate"]
 y <- colMeans(extract_samples(bamres, "dyad_vals"))
 plot(x, y, xlab = "brms estimates", ylab = "bamoso estimates")

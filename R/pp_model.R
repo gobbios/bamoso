@@ -8,6 +8,9 @@
 #' @param selected_id character of length 1, if provided: plot only data for
 #'                    that individual. If left at its default (\code{NULL}),
 #'                    plot aggregate over all individuals.
+#' @param group character of length 1. EXPERIMENTAL. Works only for
+#'          models of type \code{"multi_manygroups"} (see
+#'          \code{\link{make_stan_data_from_matrices_multi}}).
 #' @param print_info logical, default is \code{FALSE}. If \code{TRUE}, some
 #'                   summaries are printed to screen for the selected
 #'                   individual. (This argument is ignored if
@@ -25,6 +28,7 @@ pp_model <- function(mod_res,
                      xlim = NULL,
                      xbreaks = NULL,
                      selected_id = NULL,
+                     group = NULL,
                      print_info = FALSE,
                      ...) {
 
@@ -49,8 +53,28 @@ pp_model <- function(mod_res,
   # remove overflow cases if any
   xtest <- is.na(rowSums(p))
   if (any(xtest)) {
-    if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
+    if (interactive()) {
+      message("removed ",
+              sum(xtest),
+              " draws because of overflow resulting in NA in post. predictions")
+    }
     p <- p[!xtest, , drop = FALSE]
+  }
+
+
+  # group selectio
+  if (!is.null(group)) {
+    # standat$n_dyads_perperiod
+    if (!all(group %in% names(standat$n_dyads_perperiod))) {
+      stop("didn't find all groups in model", call. = FALSE)
+    }
+    selindex <- which(names(standat$index_period) %in% group)
+    p <- p[, selindex, drop = FALSE]
+    x <- suppressWarnings(hist(standat$interactions[selindex, xvar],
+                               plot = FALSE,
+                               breaks = xbreaks,
+                               ...))
+
   }
 
   # deal with individual selection

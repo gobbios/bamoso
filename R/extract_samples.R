@@ -1,13 +1,16 @@
 #' posterior draws
 #'
 #' @param mod_res model results from
-#'                \code{\link{sociality_model}})
+#'          \code{\link{sociality_model}})
 #' @param what character, one of \code{"dyad_sd"}, \code{"indi_sd"},
-#'             \code{"dyad_vals"}, \code{"indi_vals"} or
-#'             \code{"beh_intercepts"}. See details
+#'          \code{"dyad_vals"}, \code{"indi_vals"} or
+#'          \code{"beh_intercepts"}. See details.
+#' @param group character of length 1. EXPERIMENTAL. Works only for
+#'          models of type \code{"multi_manygroups"} (see
+#'          \code{\link{make_stan_data_from_matrices_multi}}).
 #' @param axis integer, indicates which axis is to be returned. Only relevant
-#'             if the model was fitted with correlations (and at least 2
-#'              behaviors).
+#'          if the model was fitted with correlations (and at least 2
+#'          behaviors).
 #'
 #' @return a (named) matrix with variable number of columns representing the
 #'         posterior draws for the desired quantity.
@@ -66,15 +69,27 @@ extract_samples <- function(mod_res,
                                      "indi_cors",
                                      "dyad_cors"
                             ),
+                            group = NULL,
                             axis = 1) {
+
+  is_multigroup <- mod_res$modeltype == "multi_manygroups"
 
   standat <- mod_res$standat
   mod_res <- mod_res$mod_res
 
+
+  n_groups <- 1
+  if (is_multigroup) {
+    glabs <- names(standat$n_dyads_perperiod)
+    n_groups <- length(glabs)
+  }
+
   if (standat$n_cors == 0) {
     if ("indi_cors" %in% what || "dyad_cors" %in% what) {
-      message("model doesn't contain correlations (removing 'indi_cors' ",
-              "and/or 'dyad_cors' from argument 'what = ')\n")
+      if (interactive()) {
+        message("model doesn't contain correlations (removing 'indi_cors' ",
+                "and/or 'dyad_cors' from argument 'what = ')\n")
+      }
       what <- what[what != "indi_cors"]
       what <- what[what != "dyad_cors"]
     }
@@ -120,24 +135,36 @@ extract_samples <- function(mod_res,
   if ("indi_sd" %in% what) {
     x <- mod_res$draws(variables = "indi_soc_sd", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
-    res <- res[, axis, drop = FALSE]
-    colnames(res) <- "greg_sd"
+    if (is_multigroup) {
+      colnames(res) <- paste0("greg_sd_", glabs)
+    } else {
+      res <- res[, axis, drop = FALSE]
+      colnames(res) <- "greg_sd"
+    }
     outres <- cbind(outres, res)
   }
 
   if ("dyad_sd" %in% what) {
     x <- mod_res$draws(variables = "dyad_soc_sd", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
-    res <- res[, axis, drop = FALSE]
-    colnames(res) <- "affi_sd"
+    if (is_multigroup) {
+      colnames(res) <- paste0("affi_sd", glabs)
+    } else {
+      res <- res[, axis, drop = FALSE]
+      colnames(res) <- "affi_sd"
+    }
     outres <- cbind(outres, res)
   }
 
   if ("beh_intercepts" %in% what) {
     x <- mod_res$draws(variables = "beh_intercepts", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
-    if (!is.null(standat)) {
-      colnames(res) <- names(standat$beh_names)
+    if (is_multigroup) {
+      colnames(res) <- paste0("beh_intercept_", glabs)
+    } else {
+      if (!is.null(standat)) {
+        colnames(res) <- names(standat$beh_names)
+      }
     }
     outres <- cbind(outres, res)
   }
@@ -145,28 +172,49 @@ extract_samples <- function(mod_res,
   if ("indi_vals" %in% what) {
     x <- mod_res$draws(variables = "indi_soc_vals", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
-    if (standat$n_cors > 0) {
-      res <- res[, grepl(paste0(",", axis), colnames(x))]
+    if (is_multigroup) {
+      colnames(res) <- names(standat$index_period_individual)
+      if (!is.null(group)) {
+        pat <- paste0("_@@_", group, "$")
+        res <- res[, grepl(pat, colnames(res))]
+        colnames(res) <- gsub(pat, "", colnames(res))
+      }
+    } else {
+      if (standat$n_cors > 0) {
+        res <- res[, grepl(paste0(",", axis), colnames(x))]
+      }
+
+      if (!is.null(standat)) {
+        colnames(res) <- names(standat$id_codes)
+      }
     }
 
-    if (!is.null(standat)) {
-      colnames(res) <- names(standat$id_codes)
-    }
     outres <- cbind(outres, res)
   }
 
   if ("dyad_vals" %in% what) {
     x <- mod_res$draws(variables = "dyad_soc_vals", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
-    if (standat$n_cors > 0) {
-      res <- res[, grepl(paste0(",", axis), colnames(x))]
+    if (is_multigroup) {
+      colnames(res) <- names(standat$index_dyad)
+      if (!is.null(group)) {
+        pat1 <- paste0("_@@_", group, "$")
+        res <- res[, grepl(pat1, colnames(res))]
+        pat2 <- paste0("_@@_", group)
+        colnames(res) <- gsub(pat2, "", colnames(res))
+      }
+    } else {
+      if (standat$n_cors > 0) {
+        res <- res[, grepl(paste0(",", axis), colnames(x))]
+      }
+      if (!is.null(standat)) {
+        dyads <- paste(names(standat$id_codes)[standat$dyads_navi[, 1]],
+                       names(standat$id_codes)[standat$dyads_navi[, 2]],
+                       sep = "_@_")
+        colnames(res) <- dyads
+      }
     }
-    if (!is.null(standat)) {
-      dyads <- paste(names(standat$id_codes)[standat$dyads_navi[, 1]],
-                     names(standat$id_codes)[standat$dyads_navi[, 2]],
-                     sep = "_@_")
-      colnames(res) <- dyads
-    }
+
     outres <- cbind(outres, res)
   }
 

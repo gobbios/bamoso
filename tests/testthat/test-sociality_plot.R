@@ -38,4 +38,9 @@ test_that("sociality plots", {
   expect_no_error(sociality_plot(r6))
 
 
+  r <- fit_example_model("grooming1")
+  expect_warning(sociality_plot(r))
+  expect_error(sociality_plot(r, group = "ABC"))
+  expect_no_error(sociality_plot(r, group = "ass", ylim = c(0, 6)))
+
 })

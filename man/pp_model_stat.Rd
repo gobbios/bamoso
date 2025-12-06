@@ -9,6 +9,7 @@ pp_model_stat(
   xvar = 1,
   stat = c("mean", "median", "min", "max", "iqr", "range_width"),
   xlim = NULL,
+  group = NULL,
   ...
 )
 }
@@ -21,6 +22,10 @@ be plotted. Default is \code{1}, i.e. the first behavior.}
 \item{stat}{statistic}
 
 \item{xlim}{numeric}
+
+\item{group}{character of length 1. EXPERIMENTAL. Works only for
+models of type \code{"multi_manygroups"} (see
+\code{\link{make_stan_data_from_matrices_multi}}).}
 
 \item{...}{further arguments to hist}
 }

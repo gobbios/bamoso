@@ -74,7 +74,7 @@ knitr::include_graphics("_images/scheme_sociality.png")
 
 We can also formalize this.
 And that's the advantage of taking the generative approach.
-In the framework of simple network metrics (I'm thinking of SRI or HWI or DSI) this is just not possible and we rely on ad-hoc solutions with potentially sever shortcomings (for some background see @hart2022): SRI, DSI and friends are non-parametric indices and therefore can't be incorporated in generative simulations.
+In the framework of simple network metrics (I'm thinking of SRI or HWI or DSI) this is just not possible and we rely on ad-hoc solutions with potentially severe shortcomings (for some background see @hart2022): SRI, DSI and friends are non-parametric indices and therefore can't be incorporated in generative simulations.
 We can do better, I like to think [@mcelreath2020].
 So here is an attempt to a formal generative model:
 

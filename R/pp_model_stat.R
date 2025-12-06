@@ -5,6 +5,9 @@
 #'             be plotted. Default is \code{1}, i.e. the first behavior.
 #' @param stat statistic
 #' @param xlim numeric
+#' @param group character of length 1. EXPERIMENTAL. Works only for
+#'          models of type \code{"multi_manygroups"} (see
+#'          \code{\link{make_stan_data_from_matrices_multi}}).
 #' @param ... further arguments to hist
 #'
 #' @importFrom graphics abline
@@ -17,6 +20,7 @@ pp_model_stat <- function(mod_res,
                           xvar = 1,
                           stat = c("mean", "median", "min", "max", "iqr", "range_width"),
                           xlim = NULL,
+                          group = NULL,
                           ...) {
 
   standat <- mod_res$standat
@@ -36,14 +40,26 @@ pp_model_stat <- function(mod_res,
     x <- standat$interactions[, xvar]
   }
 
-
   p <- p[, grepl(paste0(",", xvar, "\\]", collapse = ""), colnames(p))]
 
+  if (!is.null(group)) {
+    if (!all(group %in% names(standat$n_dyads_perperiod))) {
+      stop("didn't find all groups in model", call. = FALSE)
+    }
+    selindex <- which(names(standat$index_period) %in% group)
+    p <- p[, selindex]
+    x <- x[selindex]
+  }
+
   # remove overflow cases if any
-  xtest <- !is.na(rowSums(p))
+  xtest <- is.na(rowSums(p))
   if (any(xtest)) {
-    if (interactive()) message("removed ", sum(!xtest), " draws because of overflow")
-    p <- p[xtest, , drop = FALSE]
+    if (interactive()) {
+      message("removed ",
+              sum(xtest),
+              " draws because of overflow resulting in NA in post. predictions")
+    }
+    p <- p[!xtest, , drop = FALSE]
   }
 
   if (stat == "mean") {

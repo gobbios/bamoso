@@ -8,6 +8,7 @@ extract_samples(
   mod_res,
   what = c("indi_sd", "dyad_sd", "beh_intercepts", "indi_vals", "dyad_vals", "indi_cors",
     "dyad_cors"),
+  group = NULL,
   axis = 1
 )
 }
@@ -17,7 +18,11 @@ extract_samples(
 
 \item{what}{character, one of \code{"dyad_sd"}, \code{"indi_sd"},
 \code{"dyad_vals"}, \code{"indi_vals"} or
-\code{"beh_intercepts"}. See details}
+\code{"beh_intercepts"}. See details.}
+
+\item{group}{character of length 1. EXPERIMENTAL. Works only for
+models of type \code{"multi_manygroups"} (see
+\code{\link{make_stan_data_from_matrices_multi}}).}
 
 \item{axis}{integer, indicates which axis is to be returned. Only relevant
 if the model was fitted with correlations (and at least 2

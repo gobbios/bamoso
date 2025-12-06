@@ -23,10 +23,12 @@
 get_model <- function(type = c("simple",
                                "with_preds",
                                "cor_mod",
-                               "sans_dyadic")) {
+                               "sans_dyadic",
+                               "multi_manygroups"
+                               )) {
 
   if (missing(type)) type <- "simple"
-  if (!type %in% c("simple", "with_preds", "cor_mod", "sans_dyadic")) {
+  if (!type %in% c("simple", "with_preds", "cor_mod", "sans_dyadic", "multi_manygroups")) {
     stop ("couldn't determine which model to get...", call. = FALSE)
   }
 
@@ -46,6 +48,11 @@ get_model <- function(type = c("simple",
     f <- system.file("extdata/interaction_model_sans_dyadic.stan", package = "bamoso")
     mod <- cmdstan_model(stan_file = f, compile = TRUE, dir = NULL)
   }
+  if (type == "multi_manygroups") {
+    f <- system.file("extdata/interaction_model_multi_manygroups.stan", package = "bamoso")
+    mod <- cmdstan_model(stan_file = f, compile = TRUE, dir = NULL)
+  }
+
 
 
   mod

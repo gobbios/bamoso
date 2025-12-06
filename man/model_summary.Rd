@@ -15,7 +15,8 @@ model_summary(mod_res, probs = c(0.055, 0.945), raw = FALSE)
 
 \item{raw}{logical, default is \code{FALSE}. If \code{TRUE}, the original
 summary is returned (which can also be obtained via
-\code{mod_res$summary()})}
+\code{mod_res$summary()}) in which there are no meaningful
+labels.}
 }
 \value{
 a data frame
@@ -27,16 +28,17 @@ summary of model
 \dontrun{
 data("grooming")
 mat <- grooming$ass$groom[1:9, 1:9]
-obseff <- grooming$ass$obseff[1:9]
+obseff <- grooming$ass$obseff[1:9, 1:9]
 standat <- make_stan_data_from_matrices(mats = list(groom = mat),
                                         behav_types = "count",
                                         obseff = list(obseff))
 res <- sociality_model(standat = standat, parallel_chains = 4,
                        adapt_delta = 0.9, seed = 17)
 model_summary(res)
+
+# with two groups
+mac <- fit_example_model("grooming2")
+model_summary(mac)
 }
-
-
-
 
 }

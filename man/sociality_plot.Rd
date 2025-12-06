@@ -14,7 +14,9 @@ sociality_plot(
   which_beh = NULL,
   which_cor = NULL,
   xcols = NULL,
-  add_prior = FALSE
+  add_prior = FALSE,
+  ylim = NULL,
+  group = NULL
 )
 }
 \arguments{
@@ -50,6 +52,13 @@ Zissou colors (blueish and yellow/gold)}
 to the plot. Careful: for now the prior is hardcoded in
 this function and doesn't take its value from
 \code{mod_res}! (its value is \code{student_t(3, 0, 1)}).}
+
+\item{ylim}{optional limits for vertical density axis (taken from the
+data by default)}
+
+\item{group}{character of length 1. EXPERIMENTAL. Works only for
+models of type \code{"multi_manygroups"} (see
+\code{\link{make_stan_data_from_matrices_multi}}).}
 }
 \value{
 a plot
@@ -74,4 +83,13 @@ res <- sociality_model(standat = x$standat, parallel_chains = 4, seed = 42)
 sociality_plot(res, which_cor = c(2,3), xlim = c(-1, 1)) # true 0.7 for both
 }
 
+
+\dontrun{
+mod_res <- fit_example_model("grooming1")
+sociality_plot(mod_res)
+sociality_plot(mod_res, group = "ass")
+sociality_plot(mod_res, group = "fus")
+sociality_plot(mod_res, group = "nig")
+sociality_plot(mod_res, group = "syl")
+}
 }

@@ -4,7 +4,9 @@
 \alias{get_model}
 \title{wrapper to provide model executable}
 \usage{
-get_model(type = c("simple", "with_preds", "cor_mod", "sans_dyadic"))
+get_model(
+  type = c("simple", "with_preds", "cor_mod", "sans_dyadic", "multi_manygroups")
+)
 }
 \arguments{
 \item{type}{character, specify which model}

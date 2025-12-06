@@ -23,12 +23,15 @@ expect_null(suppressMessages(summary(f3)))
 d4 <- make_stan_data_from_matrices(mats = b, behav_types = c("prop", "count"), obseff = o, indi_cat_pred = x$input_data$indi_data$feature_cat)
 f4 <- sociality_model(d4, parallel_chains = 4, iter_warmup = 500, iter_sampling = 200, show_exceptions = FALSE, show_messages = FALSE, diagnostics = NULL)
 
+# grooming model over four groups
+gmod <- fit_example_model(num = "grooming1")
 
 test_that("model type is recognized after fitting", {
   expect_true(f1$modeltype == "simple")
   expect_true(f2$modeltype == "cor_mod")
   expect_true(f3$modeltype == "sans_dyadic")
   expect_true(f4$modeltype == "with_preds")
+  expect_true(gmod$modeltype == "multi_manygroups")
 })
 
 
@@ -37,4 +40,5 @@ test_that("summary doesn't throw errors", {
   zz <- capture.output(expect_null(suppressMessages(summary(f2))))
   zz <- capture.output(expect_null(suppressMessages(summary(f3))))
   zz <- capture.output(expect_null(suppressMessages(summary(f4))))
+  zz <- capture.output(expect_no_error(suppressWarnings(summary(gmod))))
 })

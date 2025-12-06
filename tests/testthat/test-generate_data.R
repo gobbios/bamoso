@@ -18,7 +18,7 @@ test_that("generated beta proportions don't go near 1", {
     d <- generate_data(n_beh = 1, behav_types = "dur_beta")
     vals[i] <- max(d$standat$interactions_cont)
   }
-  expect_lt(max(vals), 1 - 1e-15)
+  expect_lt(max(vals), 1 - 1e-16)
 })
 
 

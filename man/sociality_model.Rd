@@ -77,5 +77,4 @@ res$mod_res$summary("cors_indi")
 res$mod_res$summary("cors_dyad")
 }
 
-x <- generate_data(n_ids = 5, indi_covariate_slope = 0.7, beh_intercepts = 2)
 }

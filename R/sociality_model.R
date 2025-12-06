@@ -58,7 +58,6 @@
 #' res$mod_res$summary("cors_dyad")
 #' }
 #'
-#' x <- generate_data(n_ids = 5, indi_covariate_slope = 0.7, beh_intercepts = 2)
 
 sociality_model <- function(standat,
                             sans_dyadic = FALSE,
@@ -111,6 +110,12 @@ sociality_model <- function(standat,
 
   if (sans_dyadic) {
     modeltype <- "sans_dyadic"
+  }
+
+  if (!is.null(standat$is_multi_manygroups)) {
+    if (standat$is_multi_manygroups == 1) {
+      modeltype <- "multi_manygroups"
+    }
   }
 
   if (!silent) {

@@ -10,6 +10,7 @@ pp_model(
   xlim = NULL,
   xbreaks = NULL,
   selected_id = NULL,
+  group = NULL,
   print_info = FALSE,
   ...
 )
@@ -27,6 +28,10 @@ be plotted. Default is \code{1}, i.e. the first behavior.}
 \item{selected_id}{character of length 1, if provided: plot only data for
 that individual. If left at its default (\code{NULL}),
 plot aggregate over all individuals.}
+
+\item{group}{character of length 1. EXPERIMENTAL. Works only for
+models of type \code{"multi_manygroups"} (see
+\code{\link{make_stan_data_from_matrices_multi}}).}
 
 \item{print_info}{logical, default is \code{FALSE}. If \code{TRUE}, some
 summaries are printed to screen for the selected
