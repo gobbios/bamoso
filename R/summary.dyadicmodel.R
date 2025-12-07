@@ -201,7 +201,6 @@ summary.dyadicmodel <- function(object, ...) {
   xx <- data.frame(object$mod_res$summary(pars))
   diagnostics$maxrhat <- round(max(xx$rhat), 2)
 
-
   if (all(diagnostics$num_divergent == 0) &&
       all(diagnostics$num_max_treedepth == 0) &&
       all(diagnostics$ebfmi > 0.2) &&
@@ -221,5 +220,4 @@ summary.dyadicmodel <- function(object, ...) {
     }
   }
   cat("\n")
-
 }

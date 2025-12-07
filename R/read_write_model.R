@@ -39,6 +39,8 @@ write_model_to_file <- function(model_object, file_name) {
   nm1 <- normalizePath(paste0(file_name, "_model.rds"), mustWork = FALSE)
   nm2 <- normalizePath(paste0(file_name, "_data.rds"), mustWork = FALSE)
   model_object$mod_res$save_object(file = nm1)
+  model_object$standat$modeltype_temp <- 0
+  names(model_object$standat$modeltype_temp) <- model_object$modeltype
   saveRDS(model_object$standat, file = nm2)
 
   if (interactive()) {
@@ -46,9 +48,7 @@ write_model_to_file <- function(model_object, file_name) {
     cat(paste0("  - ", nm1, "\n"))
     cat(paste0("  - ", nm2, "\n"))
   }
-
 }
-
 
 #' @inherit write_model_to_file
 #' @export
@@ -61,8 +61,10 @@ read_model_from_file <- function(file_name) {
 
   standat <- readRDS(nm2)
   mod_res <- readRDS(nm1)
+  modeltype <- names(standat$modeltype_temp)
+  standat$modeltype_temp <- NULL
 
-  out <- list(standat = standat, mod_res = mod_res)
+  out <- list(standat = standat, mod_res = mod_res, modeltype = modeltype)
   class(out) <- "dyadicmodel"
   out
 }

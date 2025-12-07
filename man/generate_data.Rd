@@ -36,9 +36,8 @@ the kind of data to be generated. Possible values are \code{"prop"},
 There are also experimental \code{"dur_gamma0"} and \code{"binary"}.}
 
 \item{indi_sd}{numeric, the SD for the individual component. Must be
-positive. Default is a random value
-(\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
-See details.}
+positive. Default is a random value  (\code{runif(1, 0.1, 2)}).
+Can also be a correlation/SD matrix. See details.}
 
 \item{dyad_sd}{numeric, the SD for the dyadic component. Must be
 positive. Default is a random value

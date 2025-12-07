@@ -148,7 +148,7 @@ extract_samples <- function(mod_res,
     x <- mod_res$draws(variables = "dyad_soc_sd", format = "draws_matrix")
     res <- matrix(as.numeric(x), ncol = ncol(x))
     if (is_multigroup) {
-      colnames(res) <- paste0("affi_sd", glabs)
+      colnames(res) <- paste0("affi_sd_", glabs)
     } else {
       res <- res[, axis, drop = FALSE]
       colnames(res) <- "affi_sd"
