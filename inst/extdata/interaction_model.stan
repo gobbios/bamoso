@@ -58,6 +58,10 @@ data {
   matrix[n_beh, 2] prior_matrix;
   matrix[n_beh, 2] prior_matrix2;
 
+  // priors for indi and dyad
+  vector<lower=0>[1] prior_indi_sd;
+  vector<lower=0>[1] prior_dyad_sd;
+
   // info about indexing and number of optional shape parameter(s)
   int<lower=0> gamma_shape_n;
   array[n_beh] int<lower=0> gamma_shape_pos;
@@ -159,8 +163,8 @@ model {
   }
   indi_soc_vals_z ~ normal(0, 1);
   dyad_soc_vals_z ~ normal(0, 1);
-  indi_soc_sd ~ exponential(2);
-  dyad_soc_sd ~ exponential(2);
+  indi_soc_sd ~ exponential(prior_indi_sd[1]);
+  dyad_soc_sd ~ exponential(prior_dyad_sd[1]);
 }
 
 generated quantities {

@@ -8,6 +8,7 @@ sociality_model(
   standat,
   sans_dyadic = FALSE,
   prior_sim = FALSE,
+  priors = list(indi_sd = 2, dyad_sd = 2),
   silent = FALSE,
   ...
 )
@@ -22,6 +23,14 @@ fit the simple model without the dyadic components.}
 
 \item{prior_sim}{logical, run only prior sims (default
 is \code{FALSE})}
+
+\item{priors}{a list with two named items setting the priors for the
+individual-level SD and the dyad-level SD. The distribution of
+these priors is fixed (an exponential distribution). We can
+vary its rate parameters. By default, its values are 2 as in
+\code{list(indi_sd = 2, dyad_sd = 2)}. Currently, setting priors
+only affects the simple model and the experimental multi-group
+model.}
 
 \item{silent}{logical, try to suppress \emph{all} output (default
 is \code{FALSE})}

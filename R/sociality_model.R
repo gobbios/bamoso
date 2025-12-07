@@ -7,6 +7,13 @@
 #'          fit the simple model without the dyadic components.
 #' @param prior_sim logical, run only prior sims (default
 #'          is \code{FALSE})
+#' @param priors a list with two named items setting the priors for the
+#'          individual-level SD and the dyad-level SD. The distribution of
+#'          these priors is fixed (an exponential distribution). We can
+#'          vary its rate parameters. By default, its values are 2 as in
+#'          \code{list(indi_sd = 2, dyad_sd = 2)}. Currently, setting priors
+#'          only affects the simple model and the experimental multi-group
+#'          model.
 #' @param silent logical, try to suppress *all* output (default
 #'          is \code{FALSE})
 #' @param ... further arguments for \code{\link[cmdstanr]{sample}} (typically
@@ -62,8 +69,12 @@
 sociality_model <- function(standat,
                             sans_dyadic = FALSE,
                             prior_sim = FALSE,
+                            priors = list(indi_sd = 2, dyad_sd = 2),
                             silent = FALSE,
                             ...) {
+  # default priors for indi and dyad effect
+  standat$prior_indi_sd <- priors$indi_sd
+  standat$prior_dyad_sd <- priors$dyad_sd
 
   # determine which model...
   modeltype <- "simple" # default
@@ -115,6 +126,26 @@ sociality_model <- function(standat,
   if (!is.null(standat$is_multi_manygroups)) {
     if (standat$is_multi_manygroups == 1) {
       modeltype <- "multi_manygroups"
+      ngroups <- standat$n_periods
+      # deal with priors for individual- and dyad-level parameters
+      if (ngroups == length(priors$indi_sd)) {
+        standat$prior_indi_sd <- priors$indi_sd
+      } else {
+        if (length(priors$indi_sd) == 1) {
+          standat$prior_indi_sd <- rep(priors$indi_sd, ngroups)
+        } else {
+          stop("incorrect length of 'priors$indi_sd'")
+        }
+      }
+      if (ngroups == length(priors$dyad_sd)) {
+        standat$prior_dyad_sd <- priors$dyad_sd
+      } else {
+        if (length(priors$indi_sd) == 1) {
+          standat$prior_dyad_sd <- rep(priors$dyad_sd, ngroups)
+        } else {
+          stop("incorrect length of 'priors$dyad_sd'")
+        }
+      }
     }
   }
 

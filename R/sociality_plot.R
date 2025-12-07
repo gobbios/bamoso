@@ -188,9 +188,15 @@ sociality_plot <- function(mod_res,
 
   if (add_prior) {
     if (is.null(which_cor)) {
-      pr <- brms::rstudent_t(4000, 3, 0, 1)
-      pr <- density(pr, adjust = 2)
-      polygon(pr, border = "grey")
+      # pr <- brms::rstudent_t(4000, 3, 0, 1)
+      if (identical(standat$prior_indi_sd, standat$prior_dyad_sd)) {
+        pr <- rexp(4000, standat$prior_indi_sd)
+        pr <- density(pr)
+        polygon(pr, border = "grey")
+      } else {
+        warning("can add priors only if they are identical for indi and dyad")
+      }
+
     }
     if (!is.null(which_cor)) {
       aux <- sample(lkjpriors[, "2"], 1000) # that's the current prior in interactions_cor

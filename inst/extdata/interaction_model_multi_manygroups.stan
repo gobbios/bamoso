@@ -26,6 +26,10 @@ data {
 
   // priors for intercept
   matrix[n_periods, 2] prior_matrix;
+  // priors for indi and dyad
+  vector<lower=0>[n_periods] prior_indi_sd;
+  vector<lower=0>[n_periods] prior_dyad_sd;
+
 }
 transformed data {
 }
@@ -63,8 +67,8 @@ model {
 
   for (i in 1:n_periods) {
     beh_intercepts[i] ~ student_t(3, prior_matrix[i, 1], prior_matrix[i, 2]);
-    indi_soc_sd[i] ~ exponential(2);
-    dyad_soc_sd[i] ~ exponential(2);
+    indi_soc_sd[i] ~ exponential(prior_indi_sd[i]);
+    dyad_soc_sd[i] ~ exponential(prior_dyad_sd[i]);
   }
 
   indi_soc_vals_z ~ std_normal();
