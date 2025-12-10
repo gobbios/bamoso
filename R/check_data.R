@@ -14,7 +14,8 @@
 #' * if column and row names are provided: do they align across
 #'   interaction matrices?
 #'
-#' * are there any individuals for which all interaction data values are \code{NA}
+#' * are there any individuals for which all interaction data values
+#'   are \code{NA}
 #'
 #' @inheritParams make_stan_data_from_matrices
 #' @importFrom stats na.omit
@@ -61,7 +62,8 @@ check_data <- function(mats,
     if (!is.list(obseff)) obseff <- list(obseff)
     do <- unique(unlist(lapply(obseff, dim)))
     if (isFALSE(length(do) == 1)) {
-      stop("mismatch in dimensions found in observation effort data", call. = FALSE)
+      stop("mismatch in dimensions found in observation effort data",
+           call. = FALSE)
     } else {
       message("dimension of observation effort data match (good)")
     }
@@ -74,8 +76,10 @@ check_data <- function(mats,
   })
   aux <- do.call("rbind", aux)
   if (any(aux)) {
-    message("found *individuals* in interaction data for which *all* dyadic behavior values are NA.\n",
-            "Those individuals will be removed in make_standata_from_matrices().")
+    message("found *individuals* in interaction data for which *all* ",
+            "dyadic behavior values are NA.\n",
+            "Those individuals will be removed in",
+            "make_standata_from_matrices().")
   }
 
 
@@ -115,9 +119,11 @@ check_data <- function(mats,
     # compare names across the matrices/vectors
     xtest2 <- apply(ndat, 1, function(x) length(unique(na.omit(x))))
     if (isTRUE(any(xtest2 != 1))) {
-      message("name mismatch found between or within observation effort data (not good)")
+      message("name mismatch found between or within observation effort data",
+              "(not good)")
     } else {
-      cat("all observation effort data have matching column and row names (good)\n")
+      cat("all observation effort data have matching column and row names",
+          "(good)\n")
     }
     n_obseff <- nrow(ndat)
   }
@@ -145,7 +151,8 @@ check_data <- function(mats,
     cat("no column and row names provided\n")
   } else {
     if (any(xtest)) {
-      cat("at least one interaction matrix is missing column and/or row names\n")
+      cat("at least one interaction matrix is missing",
+          "column and/or row names\n")
     } else {
       # compare names across the matrices
       xtest2 <- apply(ndat, 1, function(x) length(unique(na.omit(x))))

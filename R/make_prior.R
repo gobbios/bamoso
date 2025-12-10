@@ -104,10 +104,14 @@ make_prior <- function(response, type, obseff = NULL, second = FALSE) {
     scale <- 2.5
     if (type == "prop") {
       if (any(obseff == 0, na.rm = TRUE)) {
-        stop("can't have any 0s in the observation effort for a 'prop' behaviour", call. = FALSE)
+        stop("can't have any 0s in the observation ",
+             "effort for a 'prop' behaviour",
+             call. = FALSE)
       }
       if (any(response / obseff > 1, na.rm = TRUE)) {
-        stop("can't have any values in 'prop' behaviour where the count is larger than the observation effort", call. = FALSE)
+        stop("can't have any values in 'prop' behaviour where the count ",
+             "is larger than the observation effort",
+             call. = FALSE)
       }
       lresp <- round(qlogis(response / obseff), 1)
     }

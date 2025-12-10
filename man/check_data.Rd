@@ -41,7 +41,8 @@ checks for now.
 effort data?
 \item if column and row names are provided: do they align across
 interaction matrices?
-\item are there any individuals for which all interaction data values are \code{NA}
+\item are there any individuals for which all interaction data values
+are \code{NA}
 }
 }
 \examples{

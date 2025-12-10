@@ -10,9 +10,9 @@
 #'          positive. Default is a random value  (\code{runif(1, 0.1, 2)}).
 #'          Can also be a correlation/SD matrix. See details.
 #' @param dyad_sd numeric, the SD for the dyadic component. Must be
-#'                positive. Default is a random value
-#'                (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
-#'                See details.
+#'          positive. Default is a random value
+#'          (\code{runif(1, 0.1, 2)}). Can also be a correlation/SD matrix.
+#'          See details.
 #' @param beh_intercepts numeric of the same length as \code{n_beh}:
 #'          the intercepts on the linear scale for each behavior
 #'          (the group-level average). Default is random
@@ -174,7 +174,9 @@ generate_data <- function(n_ids = NULL,
                           attach_ids = FALSE,
                           force_z_predictors = TRUE) {
 
-  if (isTRUE(n_ids < 4)) stop("we need at least four individuals", call. = FALSE)
+  if (isTRUE(n_ids < 4)) {
+    stop("we need at least four individuals", call. = FALSE)
+  }
 
   # those used to be function arguments, but were removed
   indi_intercept <- 0
@@ -221,7 +223,10 @@ generate_data <- function(n_ids = NULL,
   # dealing with correlated sociality scales
   mulength <- 1
   if (length(indi_sd) != 1 && length(dyad_sd) != 1) {
-    if (length(indi_sd) != length(dyad_sd)) stop("indi SD and dyad SD need to have the same dimensions", call. = FALSE)
+    if (length(indi_sd) != length(dyad_sd)) {
+      stop("indi SD and dyad SD need to have the same dimensions",
+           call. = FALSE)
+    }
     mulength <- ncol(indi_sd)
   }
   # index for columns in BLUP matrices
@@ -313,7 +318,10 @@ generate_data <- function(n_ids = NULL,
   dyad_data <- data.frame(dyad = seq_len(n_dyads),
                           id1 = dyads[, 1],
                           id2 = dyads[, 2],
-                          feature_cat = sample(c(0, 1), n_dyads, replace = TRUE),
+                          feature_cat = sample(c(0, 1),
+                                               n_dyads,
+                                               replace = TRUE
+                                               ),
                           feature_cont = rnorm(n_dyads)
   )
   # make sure that there are at least two for each category
@@ -340,7 +348,8 @@ generate_data <- function(n_ids = NULL,
 
   # select behavior scale types, currently:
   #  - count/frequency (as in poisson)
-  #  - proportion (as in proportion): still technically a count (out of 100 'trials')
+  #  - proportion (as in proportion): still technically a
+  #        count (out of 100 'trials')
   #  - dur_gamma (continuous duration)
   #  - dur_beta (continuous proportion)
 
@@ -354,8 +363,13 @@ generate_data <- function(n_ids = NULL,
 
 
   if (length(behav_types) > 1) {
-    if (length(behav_types) != n_beh) stop("number of behavior types does not match number of behaviors")
-    if (any(behav_types == "random")) stop("can't have random behavior type with more than one behavior (need to specify for each behavior individually)")
+    if (length(behav_types) != n_beh) {
+      stop("number of behavior types does not match number of behaviors")
+    }
+    if (any(behav_types == "random")) {
+      stop("can't have random behavior type with more than one behavior ",
+           "(need to specify for each behavior individually)")
+    }
     btypes <- behav_types
   }
   behav_types <- btypes
@@ -407,7 +421,8 @@ generate_data <- function(n_ids = NULL,
   interactions <- matrix(ncol = n_beh, nrow = n_dyads)
   for (i in seq_len(n_beh)) {
     lp <- indi_intercept + dyad_intercept +
-      sqrt(0.5) * (indi_soc_vals[dyads[, 1], colindex[i]] + indi_soc_vals[dyads[, 2], colindex[i]]) +
+      sqrt(0.5) * (indi_soc_vals[dyads[, 1], colindex[i]] +
+                     indi_soc_vals[dyads[, 2], colindex[i]]) +
       dyad_soc_vals[, colindex[i]]
 
     if (btypes[i] == "dur_gamma0") {
@@ -416,9 +431,15 @@ generate_data <- function(n_ids = NULL,
       lb_gamma <- lp + beh_intercepts_add[i] # second/additional intercept is for gamma
       lb_gamma <- lb_gamma + log(obseff[, i])
 
-      aux_y1 <- rbinom(n = n_dyads, size = 1, prob = lin2prob(lp_bern, obseff[, i]))
+      aux_y1 <- rbinom(n = n_dyads,
+                       size = 1,
+                       prob = lin2prob(lp_bern, obseff[, i])
+                       )
       # aux_y1 <- rbinom(n = n_dyads, size = 1, prob = plogis(lp_bern))
-      aux_y2 <- rgamma(n = n_dyads, shape = disp_pars_gamma[i], rate = disp_pars_gamma[i]/exp(lb_gamma))
+      aux_y2 <- rgamma(n = n_dyads,
+                       shape = disp_pars_gamma[i],
+                       rate = disp_pars_gamma[i]/exp(lb_gamma)
+                       )
       interactions[, i] <- aux_y1 * aux_y2
       gamma_shape_pos[i] <- i
 

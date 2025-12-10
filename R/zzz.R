@@ -1,4 +1,5 @@
-utils::globalVariables("lkjpriors")
+# list *data* objects from package to be used in function code
+utils::globalVariables(c("lkjpriors", "grooming"))
 
 #' grooming matrices and observation effort for four macaque species
 #'

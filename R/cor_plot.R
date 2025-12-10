@@ -30,13 +30,14 @@
 # @importFrom MASS kde2d
 
 
-cor_plot <- function(model,
-                     greg = TRUE,
-                     axis1 = NULL,
-                     axis2 = NULL,
-                     n_draws = 200,
-                     ...
-                     ) {
+cor_plot <- function(
+    model,
+    greg = TRUE,
+    axis1 = NULL,
+    axis2 = NULL,
+    n_draws = 200,
+    ...
+  ) {
 
   if (!requireNamespace("MASS", quietly = TRUE)) {
     stop("Package 'MASS' is required for this function but is not installed. ",
@@ -75,7 +76,6 @@ cor_plot <- function(model,
   ix <- sample(colnames(s1))
 
   make_color <- rep(FALSE, ncol(s1))
-  # make_color[sample(seq_along(make_color), 2)] <- TRUE
   make_color[c(length(make_color) - 1, length(make_color))] <- TRUE
   names(make_color) <- ix
 

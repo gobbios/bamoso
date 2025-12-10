@@ -34,6 +34,7 @@
 #'
 #' @importFrom brms rstudent_t
 #' @importFrom grDevices hcl.colors
+#' @importFrom stats rexp
 #' @importFrom graphics legend polygon
 #' @examples
 #' \dontrun{
@@ -96,13 +97,13 @@ sociality_plot <- function(mod_res,
   if (!is.null(which_cor)) {
     which_cor <- sort(unique(which_cor))
     if (standat$n_cors == 0) {
-      stop ("can't plot correlation because only one axis fitted", call. = FALSE)
+      stop("can't plot correlation because only one axis fitted", call. = FALSE)
     }
     if (length(which_cor) != 2) {
-      stop ("need to select two behaviors for correlation", call. = FALSE)
+      stop("need to select two behaviors for correlation", call. = FALSE)
     }
     if (max(which_cor) > standat$n_beh) {
-      stop ("can't find the correlation", call. = FALSE)
+      stop("can't find the correlation", call. = FALSE)
     }
     m <- matrix(0, ncol = standat$n_beh, nrow = standat$n_beh)
     m[upper.tri(m)] <- seq_len(sum(upper.tri(m)))
@@ -115,23 +116,32 @@ sociality_plot <- function(mod_res,
   } else {
     if (is.null(group)) {
       if (modeltype %in% c("multi_manygroups")) {
-        warning("looks like a model with multiple groups, you sure you want to combine the posteriors across groups?")
+        warning("Looks like a model with multiple groups. ",
+                "Are you sure you want to combine the posteriors ",
+                "across groups?")
       }
     }
 
     if (!is.null(which_beh)) {
       if (length(which_beh) != 1) {
-        stop ("need to select *one* behaviour", call. = FALSE)
+        stop("need to select *one* behaviour", call. = FALSE)
       }
       if (standat$n_cors == 0) {
-        stop ("can't select behaviour because only one axis fitted", call. = FALSE)
+        stop("can't select behaviour because only one axis fitted",
+             call. = FALSE)
       }
-      p1 <- density(as.numeric(mod_res$draws(paste0("indi_soc_sd[", which_beh, "]"))))
-      p2 <- density(as.numeric(mod_res$draws(paste0("dyad_soc_sd[", which_beh, "]"))))
+      p1 <- density(
+        as.numeric(mod_res$draws(paste0("indi_soc_sd[", which_beh, "]")))
+        )
+      p2 <- density(
+        as.numeric(mod_res$draws(paste0("dyad_soc_sd[", which_beh, "]")))
+        )
     } else {
       if (!is.null(group)) {
         if (length(group) != 1) stop("only one group can be specified")
-        if (!group %in% names(standat$n_dyads_perperiod)) stop ("group", shQuote(group), "not found")
+        if (!group %in% names(standat$n_dyads_perperiod)) {
+          stop("group", shQuote(group), "not found")
+        }
         aux <- mod_res$draws("indi_soc_sd", format = "draws_matrix")
         aux <- as.numeric(aux[, names(standat$n_dyads_perperiod) == group])
         p1 <- density(aux)
@@ -200,7 +210,7 @@ sociality_plot <- function(mod_res,
     }
     if (!is.null(which_cor)) {
       aux <- sample(lkjpriors[, "2"], 1000) # that's the current prior in interactions_cor
-      polygon(density(aux, adjust = 1.2), border = 'grey')
+      polygon(density(aux, adjust = 1.2), border = "grey")
     }
   }
 
