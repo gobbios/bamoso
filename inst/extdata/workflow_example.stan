@@ -43,8 +43,8 @@ model {
   beh_intercepts[1] ~ student_t(3, prior_matrix[1, 1], prior_matrix[1, 2]);
   indi_soc_vals_z ~ normal(0, 1);
   dyad_soc_vals_z ~ normal(0, 1);
-  indi_soc_sd ~ exponential(0.1);
-  dyad_soc_sd ~ exponential(0.1);
+  indi_soc_sd ~ exponential(1);
+  dyad_soc_sd ~ exponential(1);
   intercept ~ normal(0, 1);
   slope ~ normal(0, 1);
 }

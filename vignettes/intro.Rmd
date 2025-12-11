@@ -1062,7 +1062,7 @@ abline(v = rep(affimat[2, 2], 2), col = c("darkgrey", "#EACB2BB3"),
 sociality_plot(r2, which_beh = 3, xlim = c(0, 3))
 abline(v = rep(gregmat[3, 3], 2), col = c("darkgrey", "#3B99B1B3"),
        lwd = c(3.5, 2))
-abline(v = rep(affimat[3, 3], 2), col = c("darkgrey", "#EACB2BB3")
+abline(v = rep(affimat[3, 3], 2), col = c("darkgrey", "#EACB2BB3"),
        lwd = c(3.5, 2))
 ```
 
@@ -1071,22 +1071,194 @@ abline(v = rep(affimat[3, 3], 2), col = c("darkgrey", "#EACB2BB3")
 
 TBD.
 
-
 more to be written
+
+\clearpage
+
+
+# A primer on priors
+
+One of the advantages or challenges of Bayesian modeling (depending on your perspective) is that we can or have to set priors.
+In a nutshell (and simplified), priors are what we think the parameters that we want to estimate look like before we have modeled any data (or before the model has seen the data if you will).\footnote{Somewhat less informal: priors express what we believe about the probability distributions of our parameters before the data influence them through the likelihood.}
+We don't offer a proper introduction to Bayesian modeling here, but just want to illustrate what consequences different priors can have and how to actually look at the consequences.
+
+Practically speaking, in a lot of circumstances, priors do work well if left at some reasonable default values\footnote{Of course, what exactly 'reasonable default' means is highly context dependent, bummer.}.
+And all packages that do Bayesian inference that I am aware of, use default priors in the sense that you can fit a model in say `brms`, `STRAND`, `bisonR` or `EloSteepness` and not even realize that there are priors involved.
+It is reasonable to assume that the authors of these packages tried their best to set the default priors such they are sensible in a wide range of potential applications.
+And this is what we tried here, too: the priors we chose should work in a wide range of data sets.
+It's also important to remember that there are no right or wrong priors.
+The only criterion that priors must meet is that they are justifiable in the light of our model (and while this is not an actual quote, I took it from somewhere but don't remember the source).
+
+In the case of our sociality model here we estimate three key parameters: one intercept and two standard deviations.
+We will simulate a data set in which we *know* the parameter values.
+We then fit three models, the first with the default priors provided by `bamoso`.
+And then we change the priors to fairly different from the defaults and observe the consequences on posterior distributions of our parameters.
+
+Let's start with illustrating the exponential distribution, which is the distribution we use (see figure \ref{fig:priordistros}).
+It's a common distribution to encode prior distributions of standard deviations.
+The default setting used in the package (purple area in figure \ref{fig:priordistros}) puts half of the possible values between about 0.15 and 0.7. 
+But it also allows larger values, although it becomes increasingly skeptical of values for an SD larger than 2 but importantly doesn't rule them out.
+In contrast, the green (non-default) area is much more concentrated towards 0, i.e. much more skeptical of large values.
+And that again contrasts with the orange prior, which appears almost flat\footnote{but it isn't actually flat!}, i.e., it allows for a much wider range of values for the SD.
+
+
+```{r, echo=FALSE}
+figcap <- "
+Default and non-default prior distributions used currently in \\texttt{bamoso} for the gregariousness and affinity parameters.
+\\label{fig:priordistros}
+"
+```
+
+
+```{r, echo = FALSE, fig.width=3.8, fig.height=2.5, out.width="50%", fig.align='center', fig.cap = figcap}
+par(family = "serif", mgp = c(1.5, 0.5, 0), las = 1, mar = c(3, 3, 1, 1), tcl = 0)
+default <- rexp(10000, rate = 2)
+flattish <- rexp(10000, rate = 0.5)
+towards0 <- rexp(10000, rate = 5)
+
+plot(density(towards0), type = "n", ylim = c(0, 5), yaxs = "i", xlim = c(0, 3),
+     xaxs= "i", xlab = "x", ylab = "",
+     main = "", axes = FALSE)
+axis(1, at = 0:3, tcl = -0.2)
+title(ylab = "density", line = 0.5)
+box(bty = "l")
+polygon(density(towards0, adjust = .4), col = adjustcolor("#009634", 0.7))
+polygon(density(flattish, adjust = .4), col = adjustcolor("#CD7925", 0.7))
+polygon(density(default, adjust = .4), col = adjustcolor("#8A1B60", 0.7))
+
+
+text(0.15, 3, "rate = 5", adj = 0, col = adjustcolor("#009634", 1))
+text(0.5, 1, "rate = 2 (default)", adj = 0, col = adjustcolor("#8A1B60", 1))
+text(2, 0.5, "rate = 0.5", adj = 0, col = adjustcolor("#CD7925", 1))
+
+```
+
+
+The thing is that the posterior (which is what we want) is a trade-off between prior and data.
+If the prior is nearly flat and there is a reasonable amount of information in the data then the prior doesn't matter much in determining the shape and location of the posterior.
+If the prior is fairly informative (like the green one in figure \ref{fig:priordistros}) and there is no information in the data (the data are not "strong" enough) then the posterior might look very similar to the prior.
+If the prior is fairly informative *and* the data are very informative then there can be a conflict.
+For example, imagine the true value for the SD is 2, and the data strongly support that, but the prior is very skeptical about values larger than 1.
+In such cases the prior 'pulls' the data towards itself, and the posterior ends up looking like a compromise between the two.
+
+
+So what does that all mean with respect to our sociality model.
+In practice, all the SDs that we have seen so far fall in the range between 0 and 2.
+This is based primarily on simulations, in which priors like that lead to interaction data that looked *plausible*.
+The few empirical data sets that we've seen appear to support that this range also by and large applies to the 'real world'.
+Thus we decided for setting the purple area, i.e., a exponential distribution with rate parameter = 2.
+
+Now, below we demonstrate with a simulated data set how we can change the priors and what the consequences are.
+In short, the defaults work well (but that's hardly surprising because I simulated the data...).
+If you look at figure \ref{fig:priorconsequences}a we see the posteriors with the default priors.
+In panels b and c, we used combinations of non-default priors and you can see that even the much more informed priors pull the posteriors only to some extent towards themselves (affinity in panel b and gregariousness in panel c).
+
+So, you can change priors in the call to `sociality_model`, but unless you have good reason to so I wouldn't recommend it.
+
+
+```{r priorexample1datagen}
+set.seed(1)
+d <- generate_data(n_ids = 14, n_beh = 1,
+                   behav_types = "count",
+                   indi_sd = 1.1, dyad_sd = 1.1,
+                   beh_intercepts = -1,
+                   count_obseff = c(0.8, 1.8))
+
+behmat <- d$processed$interaction_matrices[[1]]
+colnames(behmat) <- rownames(behmat) <- LETTERS[1:d$standat$n_ids]
+obsmat <- d$processed$obseff_matrices[[1]]
+colnames(obsmat) <- rownames(obsmat) <- LETTERS[1:d$standat$n_ids]
+
+sdat <- make_stan_data_from_matrices(mats = list(groom = behmat),
+                                     behav_types = "count",
+                                     obseff = list(obsmat))
+
+```
+
+```{r priorexample1mod1}
+priors1 <- list(indi_sd = 2, dyad_sd = 2)
+res1 <- sociality_model(sdat, parallel_chains = 4, silent = TRUE, 
+                      refresh = 0, seed = 1, priors = priors1)
+```
+
+```{r priorexample1mod2}
+priors2 <- list(indi_sd = 0.5, dyad_sd = 5)
+res2 <- sociality_model(sdat, parallel_chains = 4, silent = TRUE, 
+                      refresh = 0, seed = 1, priors = priors2)
+```
+
+```{r priorexample1mod3}
+priors3 <- list(indi_sd = 5, dyad_sd = 0.5)
+res3 <- sociality_model(sdat, parallel_chains = 4, silent = TRUE, 
+                      refresh = 0, seed = 1, priors = priors3)
+```
+
+
+
+
+```{r, echo=FALSE}
+figcap <- "
+Consequences of setting different priors on the estimation of gregariousness and affinity.
+In panel (a) both prior distributions have the same rate parameter of 2 and this is also the default setting.
+In panel (b) the affinty prior has rate 5 and the gregariousness prior has rate 0.5.
+In panel (c) the affinty prior has rate 0.5 and the gregariousness prior has rate 5.
+\\label{fig:priorconsequences}
+"
+```
+
+```{r, fig.width=6, fig.height=2, out.width="90%", fig.cap=figcap}
+par(family = "serif", mgp = c(1.5, 0.5, 0), las = 1, mar = c(3, 3, 1, 1), tcl = 0)
+par(mfrow = c(1, 3))
+
+ymax <- 4
+
+sociality_plot(res1, ylim = c(0, ymax), xlim = c(0, 3))
+set.seed <- 1
+ipriors1 <- rexp(1000, priors1$indi_sd)
+dpriors1 <- rexp(1000, priors1$dyad_sd)
+points(density(ipriors1), type = "l", col = "#3B99B1", lwd = 4)
+points(density(dpriors1), type = "l", col = "#EACB2B", lwd = 4)
+points(density(ipriors1), type = "l", lwd = 0.5)
+points(density(dpriors1), type = "l", lwd = 0.5)
+text(0.1, ymax, "(a)", xpd = TRUE, adj = c(0, 1))
+
+sociality_plot(res2, ylim = c(0, ymax), xlim = c(0, 3))
+set.seed <- 1
+ipriors2 <- rexp(1000, priors2$indi_sd)
+dpriors2 <- rexp(1000, priors2$dyad_sd)
+points(density(ipriors2), type = "l", col = "#3B99B1", lwd = 4)
+points(density(dpriors2), type = "l", col = "#EACB2B", lwd = 4)
+points(density(ipriors2), type = "l", lwd = 0.5)
+points(density(dpriors2), type = "l", lwd = 0.5)
+text(0.1, ymax, "(b)", xpd = TRUE, adj = c(0, 1))
+
+sociality_plot(res3, ylim = c(0, ymax), xlim = c(0, 3))
+set.seed <- 1
+ipriors3 <- rexp(1000, priors3$indi_sd)
+dpriors3 <- rexp(1000, priors3$dyad_sd)
+points(density(ipriors3), type = "l", col = "#3B99B1", lwd = 4)
+points(density(dpriors3), type = "l", col = "#EACB2B", lwd = 4)
+points(density(ipriors3), type = "l", lwd = 0.5)
+points(density(dpriors3), type = "l", lwd = 0.5)
+text(0.1, ymax, "(c)", xpd = TRUE, adj = c(0, 1))
+```
+
+
+
 
 \clearpage
 
 # Prior predictive simulations
 
-For now, the priors for most parameters in the model are hardcoded in the Stan model code.\footnote{The exceptions are the priors for the behavioural intercepts, which are derived from the observed interactions.}
-This is likely to change in the future, but for now the priors for the standard deviations of the individual gregariousness and the dyadic affinity seem to work reasonably well across a range of situations.
+<!-- For now, the priors for most parameters in the model are hardcoded in the Stan model code.\footnote{The exceptions are the priors for the behavioural intercepts, which are derived from the observed interactions.} -->
+<!-- This is likely to change in the future, but for now the priors for the standard deviations of the individual gregariousness and the dyadic affinity seem to work reasonably well across a range of situations. -->
 
-The simulations in this section just demonstrate what happens if we use only the priors to estimate the parameters of interest.
-Actually, we still need the data because we require the observation effort (if present) and the interactions (to determine the priors for the behavioral intercepts).
+The simulations in this section should demonstrate what happens if we use only the priors to estimate the parameters of interest.
+Actually, we still need the data because we require the observation effort (if present) and the interactions (to determine the priors for the behavioral intercept(s)).
 
 ```{r, eval = FALSE}
 set.seed(123)
-x <- generate_data(n_ids = 33, n_beh = 1, behav_types = "count",
+x <- generate_data(n_ids = 34, n_beh = 1, behav_types = "count",
                    indi_sd = 0.3, dyad_sd = 0.3,
                    beh_intercepts = 0.2)
 
@@ -1099,23 +1271,23 @@ dat <- make_stan_data_from_matrices(mats = mats, obseff = obseff,
 # prior only ('null model')
 rnull <- sociality_model(dat, prior_sim = TRUE,
                          parallel_chains = 4, refresh = 0,
-                         iter_sampling = 247, seed = 42)
+                         iter_sampling = 247, seed = 47)
 # actual model
 r <- sociality_model(dat, prior_sim = FALSE,
                      parallel_chains = 4, refresh = 0,
-                     iter_sampling = 247, seed = 42)
+                     iter_sampling = 247, seed = 47)
 ```
 
-In the prior only model, we expect to see an intercept of 0.2 (as we set in the data generation step).
-The estimates for both variance components should be around 0.5 (which is the mean of the prior distribution (exponential(2))).
+In the prior only model, we expect to see an intercept of -0.2 (as we set in the data generation step).
+The posterior means for both variance components should be around 0.5 (which is the median of the prior distribution (exponential(rate = 2)))\footnote{or the posterior \textit{medians} would be around 0.33}.
 So that works quite well.
 
 ```{r, eval = FALSE}
 rnull$mod_res$summary(c("beh_intercepts", "indi_soc_sd", "dyad_soc_sd"))
 ```
 
-When we condition on the actual data, we still see the intercept of around 0.2 .
-But this time we recover the actual parameter values (0.3 and 0.3) (reasonably well, (I'm very generous with rounding here)).
+When we condition on the actual data, we still see the intercept of around -0.2.
+But this time we recover the actual parameter values (0.3 and 0.3) (reasonably well, (I'm very generous with rounding here!)).
 If you are not impressed, simulate again with a larger number of individuals.
 
 ```{r, eval = FALSE}
@@ -1131,12 +1303,11 @@ The plot below shows this in a quick and dirty way\footnote{Confusingly, it also
 
 ```{r, eval = FALSE}
 pp_model_dens(rnull, xlim = c(0, 20), ylim = c(0, 0.5), n_draws = 20, xadjust = 2)
-pp_model_dens(r1, ylim = c(0, 0.5), xlim = c(0, 50), n_draws = 100, xadjust = 2)
+pp_model_dens(r, ylim = c(0, 0.5), xlim = c(0, 50), n_draws = 100, xadjust = 2)
 ```
 
 ```{r, eval = FALSE, echo=FALSE}
 p <- rnull$mod_res$draws("interactions_pred", format = "draws_matrix")
-# p <- p[1:20, ]
 hist(p[1, ])
 hist(p[2, ])
 hist(log(apply(p, 1, max)))

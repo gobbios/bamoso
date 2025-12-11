@@ -119,7 +119,7 @@ check_data <- function(mats,
     # compare names across the matrices/vectors
     xtest2 <- apply(ndat, 1, function(x) length(unique(na.omit(x))))
     if (isTRUE(any(xtest2 != 1))) {
-      message("name mismatch found between or within observation effort data",
+      message("name mismatch found between or within observation effort data ",
               "(not good)")
     } else {
       cat("all observation effort data have matching column and row names",
